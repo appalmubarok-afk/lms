@@ -1,28 +1,1140 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+:root{
+  --primary:#2563eb; --primary-soft:color-mix(in srgb,var(--primary) 12%,transparent);
+  --bg:#f5f7fb; --card:#ffffff; --text:#1e293b; --muted:#64748b; --line:#e2e8f0;
+  --danger:#dc2626; --ok:#16a34a; --warn:#d97706; --radius:12px;
+}
+:root[data-theme="gelap"]{
+  --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --line:#334155;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+[hidden]{display:none!important}
+a{color:var(--primary)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 
-    <title>LMS SMP IT AL MUBAROK</title>
-    <link rel="icon" type="image/png" href="logo.png">
-    <meta name="description" content="LMS SMP IT Al Mubarok Kras Kediri.">
-    <meta name="robots" content="noindex, nofollow">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://lms.smpitalmubarok.sch.id/">
-    <meta property="og:title" content="LMS SMP IT AL MUBAROK">
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #ffffff; }
-        iframe { border: none; width: 100%; height: 100%; }
-    </style>
+/* buttons & inputs */
+.btn{border:1px solid transparent;border-radius:8px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer;background:var(--card);color:var(--text);text-decoration:none;display:inline-block;transition:.15s}
+.btn:hover{filter:brightness(.96)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.primary{background:var(--primary);color:#fff}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.icon{padding:6px 10px}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--card);color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);outline-offset:-1px}
+textarea{min-height:110px;resize:vertical}
+input[type=color]{padding:2px;height:40px;width:80px}
+input[type=radio]{width:auto}
+label{display:block;font-size:14px;font-weight:600;margin-bottom:12px}
+label input,label select,label textarea{margin-top:5px;font-weight:400}
+.err{color:var(--danger);font-size:14px;margin:0}
+
+/* public */
+.topnav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:20px;padding:12px 24px;background:var(--card);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;color:var(--primary)}
+.brand img{height:34px;width:34px;object-fit:contain;border-radius:6px}
+.navlinks{margin-left:auto;display:flex;gap:18px}
+.navlinks a{text-decoration:none;color:var(--muted);font-weight:600;font-size:14px}
+.navlinks a:hover{color:var(--primary)}
+.hero{background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 55%,#000));color:#fff;padding:56px 0 48px}
+.hero h1{margin:0 0 6px;font-size:clamp(26px,5vw,40px)}
+.hero .tag{margin:0 0 14px;font-size:18px;opacity:.95}
+.hero .desc{max-width:720px;opacity:.9;margin:0 0 8px}
+.hero .addr{opacity:.8;font-size:14px;margin:0}
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:24px}
+.stat-pill{background:rgba(255,255,255,.16);border-radius:10px;padding:10px 18px;font-size:14px}
+.stat-pill b{font-size:22px;display:block}
+.filters{display:flex;gap:12px;margin:28px 0 4px;flex-wrap:wrap}
+.filters input{flex:2;min-width:200px}.filters select{flex:1;min-width:180px}
+.sec-title{margin:30px 0 14px;font-size:22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:8px}
+.card.click{cursor:pointer}.card.click:hover{border-color:var(--primary);box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.card h3{margin:0;font-size:17px}
+.card .meta{font-size:13px;color:var(--muted)}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card .grow{flex:1}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:99px;background:var(--primary-soft);color:var(--primary)}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:30px;background:var(--card);border:1px dashed var(--line);border-radius:var(--radius)}
+.pubfoot{margin-top:50px;padding:24px;text-align:center;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+
+/* app shell */
+#appView{display:flex;min-height:100vh}
+.sidebar{width:250px;background:var(--card);border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;height:100vh;overflow:auto;flex-shrink:0}
+.brand.side{padding:6px 10px 16px;font-size:17px}
+.sidebar .grp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:16px 10px 6px}
+.sidebar a{display:block;padding:9px 12px;border-radius:8px;color:var(--text);text-decoration:none;font-weight:600;font-size:14px;cursor:pointer}
+.sidebar a:hover{background:var(--primary-soft)}
+.sidebar a.on{background:var(--primary);color:#fff}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.apptop{display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.apptop .spacer{flex:1}.apptop .who{font-size:14px;color:var(--muted)}
+#btnMenu{display:none}
+.content{padding:24px;max-width:1200px;width:100%}
+.pg-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.pg-head h2{margin:0;flex:1;font-size:24px}
+.pg-head input[type=search]{width:240px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.cards4{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.kpi small{color:var(--muted);font-weight:600}.kpi b{display:block;font-size:30px;color:var(--primary)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.list{list-style:none;margin:0;padding:0}.list li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.list li:last-child{border:0}
+.banner{background:#fef3c7;color:#92400e;padding:12px 16px;border-radius:10px;margin-bottom:18px;font-size:14px}
+
+/* table */
+.tblwrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--primary-soft);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.act{white-space:nowrap;display:flex;gap:6px}
+.badge{font-size:12px;font-weight:700;padding:2px 10px;border-radius:99px}
+.badge.terbit,.badge.ya{background:#dcfce7;color:#166534}
+.badge.draf,.badge.tidak{background:#fee2e2;color:#991b1b}
+.badge.admin{background:#ede9fe;color:#5b21b6}.badge.guru{background:#dbeafe;color:#1e40af}
+
+/* dialog */
+dialog{border:0;border-radius:14px;padding:0;width:min(560px,94vw);background:var(--card);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog.wide{width:min(760px,96vw)}
+dialog::backdrop{background:rgba(15,23,42,.55)}
+dialog form{display:flex;flex-direction:column;max-height:90vh}
+dialog header{padding:16px 20px;border-bottom:1px solid var(--line)}
+dialog header h3{margin:0}
+.mbody{padding:18px 20px;overflow:auto}
+dialog footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:16px}
+.tab{background:none;border:0;padding:9px 16px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab.on{color:var(--primary);border-color:var(--primary)}
+.qcard{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.qopt{display:flex;align-items:center;gap:8px;margin-top:6px}
+.qopt input[type=text]{margin:0}
+.pre{white-space:pre-wrap;word-break:break-word}
+.seg{display:flex;gap:18px;margin-bottom:14px;font-weight:600}
+.seg label{display:flex;align-items:center;gap:6px;margin:0}
+.seg input{margin:0}
+
+/* toast */
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:100}
+.toast{background:#0f172a;color:#fff;padding:11px 16px;border-radius:10px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:340px}
+.toast.err{background:var(--danger)}.toast.ok{background:var(--ok)}
+.loading{padding:40px;text-align:center;color:var(--muted)}
+.logorow{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.logoprev{width:96px;height:96px;border:1px dashed var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg);color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+.logoprev img{max-width:100%;max-height:100%;object-fit:contain}
+.logoctl{flex:1;min-width:240px}
+.logoctl .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* ===== Lapisan tampilan elegan (warna tidak diubah) ===== */
+:root{--radius:14px;--shadow-sm:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.05);--shadow-md:0 12px 28px -10px rgba(15,23,42,.22)}
+:root[data-theme="gelap"]{--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 12px 28px -10px rgba(0,0,0,.65)}
+body{-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+h1,h2,h3{letter-spacing:-.015em}
+.ico{width:18px;height:18px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;transition:background .18s,box-shadow .18s,transform .18s,filter .18s}
+.btn:active{transform:translateY(1px)}
+.btn.primary{box-shadow:0 4px 12px -4px color-mix(in srgb,var(--primary) 65%,transparent)}
+.btn.sm .ico{width:15px;height:15px}
+input,select,textarea{border-radius:10px;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.themebtn{width:38px;height:38px;padding:0;border-radius:50%}
+.ico-sun{display:none}.ico-moon{display:inline-flex}
+:root[data-theme="gelap"] .ico-sun{display:inline-flex}
+:root[data-theme="gelap"] .ico-moon{display:none}
+.topnav{padding:12px 28px;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(10px);box-shadow:var(--shadow-sm)}
+.navact{margin-left:auto;display:flex;align-items:center;gap:10px}
+.brand{letter-spacing:-.02em}
+.hero{position:relative;overflow:hidden;padding:76px 0 68px}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.08)}
+.hero::before{width:380px;height:380px;right:-90px;top:-140px}
+.hero::after{width:240px;height:240px;left:-80px;bottom:-130px}
+.hero .wrap{position:relative;z-index:1}
+.hero h1{font-weight:800;letter-spacing:-.025em}
+.stat-pill{border:1px solid rgba(255,255,255,.22);border-radius:14px;backdrop-filter:blur(6px);padding:12px 20px}
+.filters input,.filters select{box-shadow:var(--shadow-sm)}
+.sec-title{position:relative;padding-left:14px;font-size:24px}
+.sec-title::before{content:"";position:absolute;left:0;top:.18em;bottom:.18em;width:4px;border-radius:4px;background:var(--primary)}
+.card{box-shadow:var(--shadow-sm);transition:transform .2s,box-shadow .2s,border-color .2s}
+.card.click:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.sidebar{box-shadow:var(--shadow-sm)}
+.brand.side{border-bottom:1px solid var(--line);margin-bottom:6px}
+.sidebar .grp{padding:18px 12px 6px;font-size:10.5px;letter-spacing:.1em}
+.sidebar a{display:flex;align-items:center;gap:11px;padding:10px 12px;margin-bottom:2px;border-radius:10px;transition:background .15s,color .15s}
+.sidebar a .ico{opacity:.7}
+.sidebar a:hover .ico,.sidebar a.on .ico{opacity:1}
+.sidebar a.on{box-shadow:0 6px 14px -6px color-mix(in srgb,var(--primary) 70%,transparent)}
+.apptop{position:sticky;top:0;z-index:5;box-shadow:var(--shadow-sm)}
+.panel,.tblwrap,.kpi{box-shadow:var(--shadow-sm)}
+.kpi{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;transition:transform .2s,box-shadow .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.kpi>*{grid-column:1}
+.kpi .kic{grid-column:2;grid-row:1/span 3;width:44px;height:44px;border-radius:12px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center}
+.kpi .kic .ico{width:22px;height:22px}
+th{font-size:11.5px;letter-spacing:.06em}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:var(--primary-soft)}
+dialog{animation:pop .18s ease}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+
+@media(max-width:820px){
+  .sidebar{position:fixed;left:-270px;z-index:50;transition:.2s;box-shadow:0 0 30px rgba(0,0,0,.3)}
+  .sidebar.open{left:0}
+  #btnMenu{display:inline-block}
+  .navlinks{display:none}.topnav{justify-content:space-between}
+  .content{padding:16px}.row{grid-template-columns:1fr}
+  .pg-head input[type=search]{width:100%}
+}
+/* ===== Sidebar brand, bottom-nav HP ===== */
+.brand.side{flex-direction:column;text-align:center;gap:4px;padding:10px 10px 16px}
+.brand.side img{width:68px;height:68px;border-radius:14px}
+.brand.side span{font-size:16px;line-height:1.25}
+.brand.side small{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+@media(max-width:820px){
+  #appView{display:block}
+  .sidebar{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;height:auto;z-index:40;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line);box-shadow:0 -6px 20px -8px rgba(15,23,42,.25);overflow:visible}
+  .sidebar .brand.side,.sidebar .grp{display:none}
+  #sideNav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+  #sideNav::-webkit-scrollbar{display:none}
+  .sidebar a{flex:1 0 auto;min-width:68px;flex-direction:column;justify-content:center;gap:3px;padding:7px 6px;margin:0;font-size:10.5px;text-align:center;border-radius:12px}
+  .sidebar a .ico{width:21px;height:21px;opacity:1}
+  .sidebar a.on{box-shadow:none}
+  #btnMenu{display:none}
+  .apptop{padding:8px 12px}.apptop .who{display:none}
+  .content{padding:16px 14px 96px}
+  .pg-head h2{font-size:20px}
+  .topnav{padding:10px 14px}.hero{padding:44px 0 40px}
+  dialog.wide{width:100vw;max-width:100vw}
+  #toasts{bottom:84px}
+}
+</style>
 </head>
 <body>
-    <script>
-        // ⚠️ GANTI DENGAN LINK QUIZIZZ (atau link lain) YANG MAU DIBUNGKUS
-        // Contoh format: "https://quizizz.com/join?gc=12345678"
-        const TARGET_URL = "https://script.google.com/macros/s/AKfycbxVmf8id1tXwWL3p3WsbTxYbaVBaTsH8rzghZ_gwMjPsoxOAttOdw3UtEAqCAuYXZzi/exec";
 
-        document.write('<iframe id="app-frame" src="' + TARGET_URL + '"></iframe>');
-    </script>
+<!-- ============ HALAMAN PUBLIK ============ -->
+<div id="publicView">
+  <header class="topnav">
+    <div class="brand"><img id="brandLogo" alt="" hidden><span id="brandName">LMS</span></div>
+    <div class="navact">
+      <button class="btn ghost themebtn" data-theme-toggle aria-label="Ganti tema" title="Tema gelap / terang"></button>
+      <button class="btn primary" id="btnLogin">Login</button>
+    </div>
+  </header>
+
+  <section class="hero" id="sec-info">
+    <div class="wrap">
+      <h1 id="heroTitle">LMS</h1>
+      <p class="tag" id="heroTag"></p>
+      <p class="desc" id="heroDesc"></p>
+      <p class="addr" id="heroAddr"></p>
+      <div class="stats" id="pubStats"></div>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div class="filters">
+      <input type="search" id="pubSearch" placeholder="Cari materi atau kuis...">
+      <select id="pubMapel"><option value="">Semua mata pelajaran</option></select>
+    </div>
+    <h2 class="sec-title" id="sec-belajar">Pembelajaran</h2>
+    <div class="grid" id="pubPemb"></div>
+    <h2 class="sec-title" id="sec-kuis">Kuis Online</h2>
+    <div class="grid" id="pubKuis"></div>
+  </main>
+  <footer class="pubfoot" id="pubFoot"></footer>
+</div>
+
+<!-- ============ PANEL (SETELAH LOGIN) ============ -->
+<div id="appView" hidden>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand side"><img id="sideLogo" alt="" hidden><span id="sideName">LMS</span><small>Learning Management System</small></div>
+    <nav id="sideNav"></nav>
+  </aside>
+  <div class="main">
+    <header class="apptop">
+      <button class="btn ghost icon" id="btnMenu" aria-label="Menu">☰</button>
+      <div class="spacer"></div>
+      <span class="who" id="whoAmI"></span>
+      <button class="btn ghost themebtn" data-theme-toggle aria-label="Ganti tema" title="Tema gelap / terang"></button>
+      <button class="btn ghost sm" id="btnPass">Ganti Password</button>
+      <button class="btn ghost sm" id="btnHome">Halaman Utama</button>
+      <button class="btn danger sm" id="btnLogout">Keluar</button>
+    </header>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- ============ DIALOG ============ -->
+<dialog id="loginDlg">
+  <form id="loginForm" autocomplete="on">
+    <header><h3>Login Guru / Admin</h3></header>
+    <div class="mbody">
+      <label>Username<input name="username" autocomplete="username" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="err" id="loginErr" hidden></p>
+    </div>
+    <footer>
+      <button type="button" class="btn ghost" data-close>Batal</button>
+      <button type="submit" class="btn primary" id="loginSubmit">Masuk</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog id="modal"></dialog>
+<div id="toasts"></div>
+
+<script>
+/* ================== UTIL ================== */
+const S = { token: null, user: null, pub: { settings: {}, mapel: [], pembelajaran: [], kuis: [] }, page: 'dashboard', mapel: null, rows: [] };
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const linkify = t => esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+const safeUrl = u => /^https:\/\//i.test(u || '') ? u : '';
+const store = {
+  get() { try { return sessionStorage.getItem('lms_t'); } catch (e) { return null; } },
+  set(v) { try { v ? sessionStorage.setItem('lms_t', v) : sessionStorage.removeItem('lms_t'); } catch (e) {} }
+};
+
+const themeStore = {
+  get() { try { return localStorage.getItem('lms_theme'); } catch (e) { return null; } },
+  set(v) { try { localStorage.setItem('lms_theme', v); } catch (e) {} }
+};
+const ICONS = {
+  dashboard: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  siswa: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>',
+  guru: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>',
+  mapel: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+  pembelajaran: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/>',
+  kuis: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  identitas: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8"/><path d="m16 7 3 3"/>',
+  home: '<path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>'
+};
+const ic = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || '');
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+// GANTI dengan URL Web App Apps Script Anda (berakhiran /exec)
+const API_URL = 'https://script.google.com/macros/s/AKfycbzFd-bvg5S489kWoIKM5IDBIZtIaHP08xgkRxuebiXKlItIzrO87V7krNmb1ra0tSLp4g/exec';
+
+function run(fn, ...args) {
+  // text/plain agar tidak memicu preflight CORS pada Apps Script
+  return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
+    .then(r => r.json())
+    .then(j => { if (!j.ok) throw new Error(j.error || 'Terjadi kesalahan.'); return j.data; })
+    .catch(e => { throw new Error(e.message === 'Failed to fetch' ? 'Tidak dapat terhubung ke server. Periksa internet atau URL API.' : e.message); });
+}
+
+async function call(action, data) {
+  const r = await run('api', S.token, action, data || {});
+  if (!r.ok) {
+    if (r.expired) sessionEnded();
+    throw new Error(r.error);
+  }
+  if (WRITES.has(action)) await loadDb();
+  return r.data;
+}
+const WRITES = new Set(['save', 'remove', 'savePembelajaran', 'removePembelajaran', 'createKuis', 'linkKuis', 'setKuisStatus', 'removeKuis', 'importSiswa', 'setNilai', 'syncKuis']);
+async function loadDb() { S.db = await call('bootstrap'); S.mapel = S.db.mapel; }
+
+function sessionEnded() {
+  S.token = null; S.user = null; store.set(null);
+  showPublic();
+  toast('Sesi berakhir, silakan login kembali.', 'err');
+}
+
+function applyTheme(st) {
+  const root = document.documentElement;
+  if (/^#[0-9a-fA-F]{6}$/.test(st.warna || '')) root.style.setProperty('--primary', st.warna);
+  const mode = S.theme || themeStore.get() || st.mode || 'terang';
+  if (mode === 'gelap') root.setAttribute('data-theme', 'gelap'); else root.removeAttribute('data-theme');
+}
+
+function setLogo(img, url) {
+  const u = safeUrl(url);
+  if (u) { img.src = u; img.hidden = false; } else img.hidden = true;
+}
+
+/* ================== MODAL ================== */
+const modal = $('#modal');
+
+function openForm(title, bodyHtml, onSubmit, opts) {
+  opts = opts || {};
+  modal.className = opts.wide ? 'wide' : '';
+  modal.innerHTML = `<form><header><h3>${esc(title)}</h3></header><div class="mbody">${bodyHtml}</div>
+    <footer><button type="button" class="btn ghost" data-close>${opts.noSubmit ? 'Tutup' : 'Batal'}</button>
+    ${opts.noSubmit ? '' : `<button type="submit" class="btn primary">${esc(opts.submitLabel || 'Simpan')}</button>`}</footer></form>`;
+  const form = $('form', modal);
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!onSubmit) return;
+    const btn = $('button[type=submit]', form);
+    const old = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Memproses...';
+    try { await onSubmit(new FormData(form), form); modal.close(); }
+    catch (err) { toast(err.message, 'err'); }
+    finally { btn.disabled = false; btn.textContent = old; }
+  });
+  if (opts.onOpen) opts.onOpen(form);
+  modal.showModal();
+}
+
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-close]');
+  if (c) { const d = c.closest('dialog'); if (d) d.close(); }
+});
+
+/* ================== PUBLIK ================== */
+function mapelName(id) { const m = (S.pub.mapel || []).find(x => x.id === id); return m ? m.nama : 'Umum'; }
+
+async function loadPublic() {
+  try {
+    S.pub = await run('publicData');
+    applyTheme(S.pub.settings);
+    renderPublic();
+  } catch (e) { toast('Gagal memuat data: ' + e.message, 'err'); }
+}
+
+function renderPublic() {
+  const st = S.pub.settings;
+  document.title = st.namaSekolah + ' - LMS';
+  $('#brandName').textContent = st.namaSekolah;
+  $('#sideName').textContent = st.namaSekolah;
+  setLogo($('#brandLogo'), st.logoUrl); setLogo($('#sideLogo'), st.logoUrl);
+  $('#heroTitle').textContent = st.namaSekolah;
+  $('#heroTag').textContent = st.tagline;
+  $('#heroDesc').textContent = st.deskripsi;
+  $('#heroAddr').textContent = st.alamat;
+  $('#pubFoot').textContent = '© ' + new Date().getFullYear() + ' ' + st.namaSekolah;
+  $('#pubStats').innerHTML = `<div class="stat-pill"><b>${S.pub.pembelajaran.length}</b>Materi pembelajaran</div>
+    <div class="stat-pill"><b>${S.pub.kuis.length}</b>Kuis online</div>
+    <div class="stat-pill"><b>${S.pub.mapel.length}</b>Mata pelajaran</div>`;
+  const sel = $('#pubMapel'), cur = sel.value;
+  sel.innerHTML = '<option value="">Semua mata pelajaran</option>' + S.pub.mapel.map(m => `<option value="${esc(m.id)}">${esc(m.nama)}</option>`).join('');
+  sel.value = cur;
+  drawPublicLists();
+}
+
+function drawPublicLists() {
+  const q = $('#pubSearch').value.trim().toLowerCase(), m = $('#pubMapel').value;
+  const ok = r => (!m || r.mapelId === m) && (!q || (r.judul + ' ' + mapelName(r.mapelId) + ' ' + r.kelas + ' ' + r.guruNama).toLowerCase().includes(q));
+  const pemb = S.pub.pembelajaran.filter(ok), kuis = S.pub.kuis.filter(ok);
+  $('#pubPemb').innerHTML = pemb.length ? pemb.map(r => `
+    <div class="card click" data-open="${esc(r.id)}">
+      <div><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''}</div>
+      <h3>${esc(r.judul)}</h3>
+      <p class="grow">${esc((r.pembahasan || '').slice(0, 110))}${(r.pembahasan || '').length > 110 ? '…' : ''}</p>
+      <div class="meta">${esc(r.guruNama)} • ${esc((r.tanggal || '').slice(0, 10))}${r.deadline ? ' • Tugas s.d. ' + esc(r.deadline) : ''}</div>
+    </div>`).join('') : '<div class="empty">Belum ada materi pembelajaran yang diterbitkan.</div>';
+  $('#pubKuis').innerHTML = kuis.length ? kuis.map(r => `
+    <div class="card">
+      <div><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''}</div>
+      <h3>${esc(r.judul)}</h3>
+      <div class="meta grow">${esc(r.guruNama)} • ${esc((r.tanggal || '').slice(0, 10))}</div>
+      <button class="btn primary" data-kuis="${esc(r.id)}">Kerjakan Kuis</button>
+    </div>`).join('') : '<div class="empty">Belum ada kuis yang diterbitkan.</div>';
+}
+
+function pickForm(title, kelas, intro, next) {
+  const all = S.pub.siswa || [], kl = (kelas || '').toLowerCase();
+  let l = all.filter(x => !kl || (x.kelas || '').toLowerCase() === kl); if (!l.length) l = all;
+  openForm(title, `<p class="meta">${esc(intro)}</p><label>Pilih nama Anda<select name="sid" required><option value="">-- pilih nama --</option>${l.map(x => `<option value="${esc(x.id)}"${x.id === S.siswaId ? ' selected' : ''}>${esc(x.nama)}${x.kelas ? ' (' + esc(x.kelas) + ')' : ''}</option>`).join('')}</select></label>`,
+    async fd => { S.siswaId = fd.get('sid'); await next(S.siswaId, l.find(x => x.id === S.siswaId)); }, { submitLabel: 'Lanjut' });
+}
+
+function openMateri(id) {
+  const r = S.pub.pembelajaran.find(x => x.id === id);
+  if (r) pickForm(r.judul, r.kelas, 'Pilih nama Anda untuk membuka materi dan mengumpulkan tugas.', sid => setTimeout(() => showMateri(r, sid), 0));
+}
+
+function showMateri(r, sid) {
+  openForm(r.judul, `
+    <p class="meta"><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''} Oleh ${esc(r.guruNama)}</p>
+    <div class="tabs"><button type="button" class="tab on" data-tab="t1">Pembahasan</button><button type="button" class="tab" data-tab="t2">Tugas</button></div>
+    <div class="tabpane pre" id="t1">${linkify(r.pembahasan) || '<i>Belum ada pembahasan.</i>'}</div>
+    <div class="tabpane" id="t2" hidden><div class="pre">${r.deadline ? `<b>Batas pengumpulan: ${esc(r.deadline)}</b><br><br>` : ''}${linkify(r.tugas) || '<i>Tidak ada tugas.</i>'}</div>
+      <label style="margin-top:16px">Jawaban tugas / tautan hasil kerja<textarea name="jawaban" placeholder="Tulis jawaban atau tempel tautan (Google Drive, dll), lalu klik Kirim Tugas"></textarea></label></div>`,
+    async fd => {
+      const x = await run('pubAction', 'tugas', r.id, sid, fd.get('jawaban'));
+      if (!x.ok) throw new Error(x.error);
+      toast('Tugas berhasil dikirim.', 'ok');
+    }, { wide: true, submitLabel: 'Kirim Tugas' });
+}
+
+function openKuis(id) {
+  const k = S.pub.kuis.find(x => x.id === id);
+  if (!k) return;
+  pickForm(k.judul, k.kelas, 'Pilih nama Anda sebelum mengerjakan kuis.', async (sid, sw) => {
+    const x = await run('pubAction', 'kuis', id, sid);
+    if (!x.ok) throw new Error(x.error);
+    setTimeout(() => openForm(k.judul, `<p>Halo, <b>${esc(sw ? sw.nama : '')}</b>. Klik tombol di bawah untuk mengerjakan kuis.</p><a class="btn primary" target="_blank" rel="noopener" href="${esc(safeUrl(x.url))}">Kerjakan Kuis</a>`, null, { noSubmit: true }), 0);
+  });
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('.tab');
+  if (t) {
+    const box = t.closest('form') || document;
+    $$('.tab', box).forEach(x => x.classList.toggle('on', x === t));
+    $$('.tabpane', box).forEach(p => p.hidden = p.id !== t.dataset.tab);
+  }
+  const card = e.target.closest('[data-open]');
+  if (card) openMateri(card.dataset.open);
+  const kz = e.target.closest('[data-kuis]'); if (kz) openKuis(kz.dataset.kuis);
+});
+$('#pubSearch').addEventListener('input', drawPublicLists);
+$('#pubMapel').addEventListener('change', drawPublicLists);
+
+/* ================== LOGIN ================== */
+const loginDlg = $('#loginDlg');
+$('#btnLogin').onclick = () => {
+  if (S.token) return showApp();
+  $('#loginErr').hidden = true; $('#loginForm').reset(); loginDlg.showModal();
+};
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, btn = $('#loginSubmit');
+  btn.disabled = true; btn.textContent = 'Memproses...';
+  try {
+    const r = await run('login', f.username.value, f.password.value);
+    if (!r.ok) { $('#loginErr').textContent = r.error; $('#loginErr').hidden = false; return; }
+    S.token = r.data.token; S.user = r.data.user; store.set(S.token);
+    loginDlg.close();
+    showApp();
+    if (r.data.defaultPass) toast('Anda masih memakai password bawaan. Segera ganti password!', 'err');
+  } catch (err) {
+    $('#loginErr').textContent = err.message; $('#loginErr').hidden = false;
+  } finally { btn.disabled = false; btn.textContent = 'Masuk'; }
+});
+
+$('#btnLogout').onclick = async () => {
+  try { await run('logout', S.token); } catch (e) {}
+  S.token = null; S.user = null; S.mapel = null; store.set(null);
+  showPublic(); toast('Anda telah keluar.', 'ok');
+};
+$('#btnHome').onclick = () => { showPublic(); };
+$('#btnMenu').onclick = () => $('#sidebar').classList.toggle('open');
+$('#btnPass').onclick = () => {
+  openForm('Ganti Password', `
+    <label>Password lama<input type="password" name="lama" required autocomplete="current-password"></label>
+    <label>Password baru (min. 6 karakter)<input type="password" name="baru" minlength="6" required autocomplete="new-password"></label>
+    <label>Ulangi password baru<input type="password" name="ulang" minlength="6" required autocomplete="new-password"></label>`,
+    async fd => {
+      if (fd.get('baru') !== fd.get('ulang')) throw new Error('Konfirmasi password tidak cocok.');
+      await call('changePassword', { lama: fd.get('lama'), baru: fd.get('baru') });
+      toast('Password berhasil diganti.', 'ok');
+    });
+};
+
+function showPublic() {
+  $('#appView').hidden = true; $('#publicView').hidden = false;
+  $('#btnLogin').innerHTML = ic('login') + (S.token ? 'Masuk ke Panel' : 'Login');
+  loadPublic();
+}
+
+async function showApp() {
+  $('#publicView').hidden = true; $('#appView').hidden = false;
+  $('#whoAmI').textContent = S.user.nama + ' (' + S.user.role + ')';
+  buildNav();
+  $('#content').innerHTML = '<div class="loading">Memuat data...</div>';
+  try { await loadDb(); } catch (e) { toast(e.message, 'err'); return; }
+  go('dashboard');
+}
+
+/* ================== NAVIGASI ================== */
+function navItems() {
+  const admin = S.user.role === 'admin';
+  const n = [
+    { id: 'dashboard', l: 'Dashboard', i: 'dashboard' },
+    { g: 'Data Master' }, { id: 'siswa', l: 'Data Siswa', i: 'siswa' }, { id: 'guru', l: 'Data Guru', i: 'guru' }, { id: 'mapel', l: 'Data Mata Pelajaran', i: 'mapel' },
+    { g: 'Pembelajaran' }, { id: 'pembelajaran', l: 'Materi Pembelajaran', i: 'pembelajaran' }, { id: 'kuis', l: 'Kuis Online', i: 'kuis' }
+  ];
+  if (admin) n.push({ g: 'Setting' }, { id: 'identitas', l: 'Identitas Sekolah', i: 'identitas' }, { id: 'users', l: 'User', i: 'users' });
+  return n;
+}
+
+function buildNav() {
+  $('#sideNav').innerHTML = navItems().map(i => i.g ? `<div class="grp">${esc(i.g)}</div>` : `<a data-page="${i.id}">${ic(i.i)}<span>${esc(i.l)}</span></a>`).join('');
+}
+$('#sideNav').addEventListener('click', e => {
+  const a = e.target.closest('[data-page]');
+  if (a) { go(a.dataset.page); $('#sidebar').classList.remove('open'); }
+});
+
+const PAGES = {
+  dashboard: () => pgDashboard(),
+  siswa: () => pgEntity('siswa'), guru: () => pgEntity('guru'), mapel: () => pgEntity('mapel'), users: () => pgEntity('users'),
+  pembelajaran: () => pgPemb(), kuis: () => pgKuis(),
+  identitas: () => pgIdentitas()
+};
+
+async function go(page) {
+  S.page = page;
+  $$('#sideNav a').forEach(a => a.classList.toggle('on', a.dataset.page === page));
+  $('#content').innerHTML = '<div class="loading">Memuat...</div>';
+  try { await PAGES[page](); }
+  catch (e) { $('#content').innerHTML = `<div class="panel err">${esc(e.message)}</div>`; }
+}
+
+async function getMapel() {
+  if (!S.mapel) S.mapel = await call('list', { entity: 'mapel' });
+  return S.mapel;
+}
+const mName = id => { const m = (S.mapel || []).find(x => x.id === id); return m ? m.nama : '-'; };
+const badge = v => `<span class="badge ${esc(v)}">${esc(v)}</span>`;
+
+/* ================== DASHBOARD ================== */
+async function pgDashboard() {
+  const D = S.db, d = { siswa: D.siswa.length, guru: D.guru.length, mapel: D.mapel.length, pembelajaran: D.pemb.length, kuis: D.kuis.length,
+    pembTerbit: D.pemb.filter(r => r.status === 'terbit').length, kuisTerbit: D.kuis.filter(r => r.status === 'terbit').length,
+    recentPemb: D.pemb.slice(0, 5), recentKuis: D.kuis.slice(0, 5) };
+  const admin = S.user.role === 'admin';
+  const li = a => a.length ? a.map(r => `<li><span>${esc(r.judul)}</span>${badge(r.status)}</li>`).join('') : '<li><i>Belum ada data.</i></li>';
+  $('#content').innerHTML = `
+    <div class="pg-head"><h2>Dashboard</h2></div>
+    <div class="cards4">
+      <div class="kpi"><span class="kic">${ic('siswa')}</span><small>Siswa</small><b>${d.siswa}</b></div>
+      <div class="kpi"><span class="kic">${ic('guru')}</span><small>Guru</small><b>${d.guru}</b></div>
+      <div class="kpi"><span class="kic">${ic('mapel')}</span><small>Mata Pelajaran</small><b>${d.mapel}</b></div>
+      <div class="kpi"><span class="kic">${ic('pembelajaran')}</span><small>${admin ? 'Pembelajaran' : 'Pembelajaran Saya'}</small><b>${d.pembelajaran}</b><small>${d.pembTerbit} terbit</small></div>
+      <div class="kpi"><span class="kic">${ic('kuis')}</span><small>${admin ? 'Kuis Online' : 'Kuis Saya'}</small><b>${d.kuis}</b><small>${d.kuisTerbit} terbit</small></div>
+    </div>
+    <div class="two">
+      <div class="panel"><h3>Pembelajaran terbaru</h3><ul class="list">${li(d.recentPemb)}</ul></div>
+      <div class="panel"><h3>Kuis terbaru</h3><ul class="list">${li(d.recentKuis)}</ul></div>
+    </div>`;
+}
+
+/* ================== DATA MASTER & USER ================== */
+const YATIDAK = [['ya', 'Aktif'], ['tidak', 'Nonaktif']];
+const ENT = {
+  siswa: { title: 'Data Siswa', fields: [
+    { k: 'nama', l: 'Nama Lengkap', req: 1 }, { k: 'kelas', l: 'Kelas' },
+    { k: 'jk', l: 'Jenis Kelamin', t: 'select', o: [['L', 'Laki-laki'], ['P', 'Perempuan']] },
+    { k: 'aktif', l: 'Status', t: 'select', o: YATIDAK, badge: 1 }] },
+  guru: { title: 'Data Guru', fields: [
+    { k: 'nama', l: 'Nama Lengkap', req: 1 }, { k: 'mapel', l: 'Mata Pelajaran yang Diampu' }] },
+  mapel: { title: 'Data Mata Pelajaran', fields: [{ k: 'nama', l: 'Nama Mata Pelajaran', req: 1 }] },
+  users: { title: 'Manajemen User', fields: [
+    { k: 'username', l: 'Username', req: 1 }, { k: 'nama', l: 'Nama', req: 1 },
+    { k: 'role', l: 'Role', t: 'select', o: [['guru', 'Guru'], ['admin', 'Admin']], badge: 1 },
+    { k: 'aktif', l: 'Status', t: 'select', o: YATIDAK, badge: 1 },
+    { k: 'password', l: 'Password', t: 'password', formOnly: 1 }] }
+};
+
+function fieldHtml(f, v) {
+  v = v == null ? '' : v;
+  const req = f.req ? ' required' : '';
+  if (f.t === 'select') return `<label>${esc(f.l)}<select name="${f.k}"${req}>${f.o.map(o => `<option value="${esc(o[0])}"${o[0] === v ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
+  if (f.t === 'password') return `<label>${esc(f.l)}${f.hint ? ' <small>' + esc(f.hint) + '</small>' : ''}<input type="password" name="${f.k}" autocomplete="new-password"${req}></label>`;
+  return `<label>${esc(f.l)}<input type="${f.t || 'text'}" name="${f.k}" value="${esc(v)}"${req}></label>`;
+}
+function cell(f, v) {
+  if (f.t === 'select') {
+    const o = f.o.find(x => x[0] === v);
+    return f.badge ? `<span class="badge ${esc(v)}">${esc(o ? o[1] : v)}</span>` : esc(o ? o[1] : v);
+  }
+  return esc(v);
+}
+
+async function pgEntity(name) {
+  const e = ENT[name], admin = S.user.role === 'admin';
+  const rows = S.db[name];
+  if (name === 'mapel') S.mapel = rows;
+  const cols = e.fields.filter(f => !f.formOnly);
+  $('#content').innerHTML = `
+    <div class="pg-head"><h2>${esc(e.title)}</h2>
+      <input type="search" id="q" placeholder="Cari...">
+      ${admin && name === 'siswa' ? '<button class="btn ghost" id="btnTpl">Unduh Template Excel</button><button class="btn ghost" id="btnImp">Impor Siswa</button>' : ''}
+      ${admin ? '<button class="btn primary" id="btnAdd">+ Tambah</button>' : ''}</div>
+    ${admin ? '' : '<p class="meta">Anda hanya dapat melihat data ini.</p>'}
+    <div class="tblwrap"><table><thead><tr><th>#</th>${cols.map(f => `<th>${esc(f.l)}</th>`).join('')}${admin ? '<th>Aksi</th>' : ''}</tr></thead><tbody id="tb"></tbody></table></div>`;
+  const draw = () => {
+    const q = $('#q').value.trim().toLowerCase();
+    const list = rows.filter(r => !q || cols.some(f => String(r[f.k] || '').toLowerCase().includes(q)));
+    $('#tb').innerHTML = list.length ? list.map((r, i) => `<tr><td>${i + 1}</td>${cols.map(f => `<td>${cell(f, r[f.k])}</td>`).join('')}
+      ${admin ? `<td class="act"><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button><button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td>` : ''}</tr>`).join('')
+      : `<tr><td colspan="${cols.length + 2}" class="loading">Belum ada data.</td></tr>`;
+  };
+  draw();
+  $('#q').addEventListener('input', draw);
+  if (!admin) return;
+  $('#btnAdd').onclick = () => entityForm(name, null);
+  if (name === 'siswa') {
+    $('#btnTpl').onclick = downloadTemplateSiswa;
+    $('#btnImp').onclick = importSiswaDialog;
+  }
+  $('#tb').addEventListener('click', async ev => {
+    const ed = ev.target.closest('[data-edit]'), dl = ev.target.closest('[data-del]');
+    if (ed) entityForm(name, rows.find(r => r.id === ed.dataset.edit));
+    if (dl && confirm('Hapus data ini? Tindakan tidak dapat dibatalkan.')) {
+      try { await call('remove', { entity: name, id: dl.dataset.del }); toast('Data dihapus.', 'ok'); go(name); }
+      catch (err) { toast(err.message, 'err'); }
+    }
+  });
+}
+
+/* ---------- Template & impor siswa (Excel) ---------- */
+function needXlsx() {
+  if (typeof XLSX === 'undefined') {
+    toast('Pustaka Excel gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.', 'err');
+    return false;
+  }
+  return true;
+}
+
+function downloadTemplateSiswa() {
+  if (!needXlsx()) return;
+  try {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([['Nama', 'Kelas', 'Jenis Kelamin']]);
+    ws['!cols'] = [{ wch: 34 }, { wch: 14 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Data Siswa');
+    const info = XLSX.utils.aoa_to_sheet([
+      ['Petunjuk pengisian'],
+      ['1. Isi data siswa mulai baris 2 pada sheet "Data Siswa". Jangan mengubah judul kolom.'],
+      ['2. Nama wajib diisi.'],
+      ['3. Kelas diisi bebas, contoh: VII A.'],
+      ['4. Jenis Kelamin diisi L (laki-laki) atau P (perempuan).'],
+      ['5. Siswa dengan nama dan kelas yang sama dengan data yang sudah ada akan dilewati.'],
+      ['6. Simpan file, lalu klik tombol Impor Siswa di aplikasi.']
+    ]);
+    info['!cols'] = [{ wch: 90 }];
+    XLSX.utils.book_append_sheet(wb, info, 'Petunjuk');
+    XLSX.writeFile(wb, 'template-data-siswa.xlsx');
+  } catch (err) { toast('Gagal membuat template: ' + err.message, 'err'); }
+}
+
+function parseSiswaFile(file) {
+  return new Promise((ok, no) => {
+    if (file.size > 5 * 1024 * 1024) return no(new Error('Ukuran file maksimal 5 MB.'));
+    const rd = new FileReader();
+    rd.onerror = () => no(new Error('File tidak dapat dibaca.'));
+    rd.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets['Data Siswa'] || wb.Sheets[wb.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+        if (!raw.length) throw new Error('File kosong.');
+        const head = raw[0].map(h => String(h).trim().toLowerCase());
+        const col = (...names) => head.findIndex(h => names.includes(h));
+        const iN = col('nama', 'nama lengkap', 'nama siswa'), iK = col('kelas'), iJ = col('jenis kelamin', 'jk', 'l/p');
+        if (iN < 0) throw new Error('Kolom "Nama" tidak ditemukan. Gunakan template yang disediakan.');
+        const cellOf = (r, i) => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '';
+        const out = [];
+        raw.slice(1).forEach((r, i) => {
+          const nama = cellOf(r, iN), kelas = cellOf(r, iK), jk = cellOf(r, iJ);
+          if (!nama && !kelas && !jk) return;
+          out.push({ baris: i + 2, nama, kelas, jk });
+        });
+        if (!out.length) throw new Error('Tidak ada baris data pada file.');
+        ok(out);
+      } catch (err) { no(err); }
+    };
+    rd.readAsArrayBuffer(file);
+  });
+}
+
+function importSiswaDialog() {
+  if (!needXlsx()) return;
+  let parsed = null;
+  openForm('Impor Data Siswa', `
+    <p class="meta">Gunakan template dari tombol "Unduh Template Excel". Kolom: Nama, Kelas, Jenis Kelamin (L/P). Siswa dengan nama dan kelas yang sudah ada akan dilewati.</p>
+    <label>File Excel (.xlsx, .xls, atau .csv)<input type="file" id="impFile" accept=".xlsx,.xls,.csv" required></label>
+    <div id="impInfo" class="meta"></div>`,
+    async () => {
+      if (!parsed || !parsed.length) throw new Error('Pilih file Excel yang valid terlebih dahulu.');
+      const tot = { ditambah: 0, dilewati: 0, error: [], totalError: 0 };
+      for (let i = 0; i < parsed.length; i += 300) {
+        const r = await call('importSiswa', { rows: parsed.slice(i, i + 300) });
+        tot.ditambah += r.ditambah; tot.dilewati += r.dilewati; tot.totalError += r.totalError;
+        tot.error.push(...r.error);
+      }
+      toast(`Impor selesai: ${tot.ditambah} siswa ditambahkan, ${tot.dilewati} dilewati (sudah ada), ${tot.totalError} baris tidak valid.`, tot.ditambah ? 'ok' : '');
+      if (tot.error.length) toast('Baris bermasalah: ' + tot.error.slice(0, 3).join('; '), 'err');
+      go('siswa');
+    }, {
+      submitLabel: 'Impor', onOpen: form => {
+        $('#impFile', form).addEventListener('change', async ev => {
+          const info = $('#impInfo', form), f = ev.target.files[0];
+          parsed = null; info.textContent = '';
+          if (!f) return;
+          info.textContent = 'Membaca file...';
+          try {
+            parsed = await parseSiswaFile(f);
+            info.innerHTML = `<b>${parsed.length}</b> baris data terbaca. Contoh: ${esc(parsed.slice(0, 3).map(r => r.nama).join(', '))}${parsed.length > 3 ? ', ...' : ''}`;
+          } catch (err) { info.innerHTML = `<span class="err">${esc(err.message)}</span>`; }
+        });
+      }
+    });
+}
+
+function entityForm(name, item) {
+  const e = ENT[name];
+  const fields = e.fields.map(f => {
+    if (f.k === 'password') f = Object.assign({}, f, { req: !item, hint: item ? '(kosongkan jika tidak diubah)' : '(min. 6 karakter)' });
+    return fieldHtml(f, item ? item[f.k] : (f.k === 'aktif' ? 'ya' : ''));
+  }).join('');
+  openForm((item ? 'Edit ' : 'Tambah ') + e.title, fields, async fd => {
+    const obj = {};
+    e.fields.forEach(f => obj[f.k] = fd.get(f.k));
+    if (item) obj.id = item.id;
+    await call('save', { entity: name, item: obj });
+    toast('Data tersimpan.', 'ok');
+    go(name);
+  });
+}
+
+/* ================== PEMBELAJARAN ================== */
+async function pgPemb() {
+  const rows = S.db.pemb;
+  S.rows = rows;
+  const admin = S.user.role === 'admin';
+  $('#content').innerHTML = `
+    <div class="pg-head"><h2>Pembelajaran</h2><input type="search" id="q" placeholder="Cari..."><button class="btn ghost" id="btnRekap">Unduh Nilai (Excel)</button><button class="btn primary" id="btnAdd">+ Pembelajaran Baru</button></div>
+    <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th>${admin ? '<th>Guru</th>' : ''}<th>Batas Tugas</th><th>Status</th><th>Pengumpulan</th><th>Aksi</th></tr></thead><tbody id="tb"></tbody></table></div>`;
+  const draw = () => {
+    const q = $('#q').value.trim().toLowerCase();
+    const list = S.rows.filter(r => !q || (r.judul + ' ' + mName(r.mapelId) + ' ' + r.kelas).toLowerCase().includes(q));
+    $('#tb').innerHTML = list.length ? list.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td>
+      ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${esc(r.deadline || '-')}</td><td>${badge(r.status)}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('pemb', r)} sudah</button></td>
+      <td class="act"><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
+      <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
+      <button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td></tr>`).join('')
+      : `<tr><td colspan="8" class="loading">Belum ada pembelajaran. Klik "+ Pembelajaran Baru".</td></tr>`;
+  };
+  draw();
+  $('#q').addEventListener('input', draw);
+  $('#btnAdd').onclick = () => pembForm(null);
+  $('#btnRekap').onclick = () => dlNilai('pemb', S.db.pemb, 'nilai-pembelajaran');
+  $('#tb').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'); if (b) openKumpul('pemb', b.dataset.kumpul); });
+  $('#tb').addEventListener('click', async ev => {
+    const ed = ev.target.closest('[data-edit]'), dl = ev.target.closest('[data-del]'), tg = ev.target.closest('[data-toggle]');
+    try {
+      if (ed) pembForm(S.rows.find(r => r.id === ed.dataset.edit));
+      if (tg) {
+        const r = S.rows.find(x => x.id === tg.dataset.toggle);
+        await call('savePembelajaran', { item: Object.assign({}, r, { status: r.status === 'terbit' ? 'draf' : 'terbit' }) });
+        toast(r.status === 'terbit' ? 'Ditarik dari halaman utama.' : 'Diterbitkan di halaman utama.', 'ok'); go('pembelajaran');
+      }
+      if (dl && confirm('Hapus pembelajaran ini?')) { await call('removePembelajaran', { id: dl.dataset.del }); toast('Dihapus.', 'ok'); go('pembelajaran'); }
+    } catch (err) { toast(err.message, 'err'); }
+  });
+}
+
+function pembForm(item) {
+  const mp = S.mapel || [];
+  if (!mp.length) { toast('Tambahkan data mata pelajaran terlebih dahulu.', 'err'); return; }
+  const v = k => item ? item[k] || '' : '';
+  openForm(item ? 'Edit Pembelajaran' : 'Pembelajaran Baru', `
+    <div class="tabs"><button type="button" class="tab on" data-tab="p1">Pembahasan</button><button type="button" class="tab" data-tab="p2">Tugas</button></div>
+    <div class="tabpane" id="p1">
+      <label>Judul<input name="judul" value="${esc(v('judul'))}" required></label>
+      <div class="row">
+        <label>Mata Pelajaran<select name="mapelId" required>${mp.map(m => `<option value="${esc(m.id)}"${m.id === v('mapelId') ? ' selected' : ''}>${esc(m.nama)}</option>`).join('')}</select></label>
+        <label>Kelas<input name="kelas" value="${esc(v('kelas'))}" placeholder="mis. X IPA 1"></label>
+      </div>
+      <label>Pembahasan / materi <small>(tautan http(s) otomatis bisa diklik)</small><textarea name="pembahasan" style="min-height:200px">${esc(v('pembahasan'))}</textarea></label>
+    </div>
+    <div class="tabpane" id="p2" hidden>
+      <label>Instruksi tugas<textarea name="tugas" style="min-height:160px">${esc(v('tugas'))}</textarea></label>
+      <div class="row">
+        <label>Batas pengumpulan<input type="date" name="deadline" value="${esc(v('deadline'))}"></label>
+        <label>Status<select name="status"><option value="draf"${v('status') !== 'terbit' ? ' selected' : ''}>Draf (belum tampil)</option><option value="terbit"${v('status') === 'terbit' ? ' selected' : ''}>Terbit (tampil di halaman utama)</option></select></label>
+      </div>
+    </div>`, async fd => {
+    const o = {};
+    ['judul', 'mapelId', 'kelas', 'pembahasan', 'tugas', 'deadline', 'status'].forEach(k => o[k] = fd.get(k));
+    if (item) o.id = item.id;
+    await call('savePembelajaran', { item: o });
+    toast('Pembelajaran tersimpan.', 'ok'); go('pembelajaran');
+  }, { wide: true });
+}
+
+/* ================== KUIS ONLINE ================== */
+async function pgKuis() {
+  const rows = S.db.kuis;
+  S.rows = rows;
+  const admin = S.user.role === 'admin';
+  $('#content').innerHTML = `
+    <div class="pg-head"><h2>Kuis Online</h2><button class="btn ghost" id="btnRekap">Unduh Nilai (Excel)</button><button class="btn primary" id="btnAdd">+ Kuis Baru</button></div>
+    <p class="meta">Kuis dibuat sebagai Google Form dan otomatis berbentuk quiz (penilaian otomatis untuk pilihan ganda).</p>
+    <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th>${admin ? '<th>Guru</th>' : ''}<th>Status</th><th>Dibuat</th><th>Pengumpulan</th><th>Aksi</th></tr></thead>
+    <tbody>${rows.length ? rows.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td>
+      ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${badge(r.status)}</td><td>${esc((r.tanggal || '').slice(0, 10))}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('kuis', r)} sudah</button></td>
+      <td class="act">${safeUrl(r.editUrl) ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${esc(r.editUrl)}">Edit Form</a>` : ''}
+      ${safeUrl(r.formUrl) ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${esc(r.formUrl)}">Buka</a>` : ''}
+      <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
+      <button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td></tr>`).join('') : '<tr><td colspan="8" class="loading">Belum ada kuis.</td></tr>'}</tbody></table></div>`;
+  $('#btnAdd').onclick = kuisForm;
+  $('#btnRekap').onclick = () => dlNilai('kuis', S.db.kuis, 'nilai-kuis');
+  $('#content').querySelector('tbody').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'); if (b) openKumpul('kuis', b.dataset.kumpul); });
+  $('#content').querySelector('tbody').addEventListener('click', async ev => {
+    const tg = ev.target.closest('[data-toggle]'), dl = ev.target.closest('[data-del]');
+    try {
+      if (tg) {
+        const r = S.rows.find(x => x.id === tg.dataset.toggle);
+        await call('setKuisStatus', { id: r.id, status: r.status === 'terbit' ? 'draf' : 'terbit' });
+        toast(r.status === 'terbit' ? 'Kuis ditarik.' : 'Kuis diterbitkan di halaman utama.', 'ok'); go('kuis');
+      }
+      if (dl && confirm('Hapus kuis dari daftar? (Google Form tetap ada di Drive Anda)')) { await call('removeKuis', { id: dl.dataset.del }); toast('Dihapus.', 'ok'); go('kuis'); }
+    } catch (err) { toast(err.message, 'err'); }
+  });
+}
+
+let qSeq = 0;
+function soalHtml() {
+  const n = ++qSeq;
+  return `<div class="qcard"><div class="qhead"><b>Soal <span class="qn"></span></b><button type="button" class="btn sm danger" data-delq>Hapus</button></div>
+    <input class="q-text" placeholder="Tulis pertanyaan">
+    <div class="row" style="margin-top:8px">
+      <select class="q-type"><option value="pg">Pilihan ganda</option><option value="uraian">Uraian (dinilai manual)</option></select>
+      <input class="q-poin" type="number" min="0" max="100" value="10" title="Poin">
+    </div>
+    <div class="q-opts">${['A', 'B', 'C', 'D'].map((L, i) => `<div class="qopt"><input type="radio" name="key${n}" value="${i}"${i === 0 ? ' checked' : ''} title="Kunci jawaban"><input type="text" class="q-opt" placeholder="Opsi ${L}"></div>`).join('')}
+      <small class="meta">Pilih tombol radio di sebelah opsi yang benar.</small></div></div>`;
+}
+
+function kuisForm() {
+  const mp = S.mapel || [];
+  if (!mp.length) { toast('Tambahkan data mata pelajaran terlebih dahulu.', 'err'); return; }
+  openForm('Kuis Online Baru', `
+    <div class="seg"><label><input type="radio" name="mode" value="new" checked> Buat soal baru</label><label><input type="radio" name="mode" value="link"> Tautkan Google Form yang sudah ada</label></div>
+    <label>Judul kuis<input name="judul" required></label>
+    <div class="row">
+      <label>Mata Pelajaran<select name="mapelId">${mp.map(m => `<option value="${esc(m.id)}">${esc(m.nama)}</option>`).join('')}</select></label>
+      <label>Kelas<input name="kelas" placeholder="mis. X IPA 1"></label>
+    </div>
+    <div id="kNew">
+      <label>Deskripsi / petunjuk<textarea name="deskripsi" style="min-height:70px"></textarea></label>
+      <div id="soalBox"></div>
+      <button type="button" class="btn ghost" id="addQ">+ Tambah Soal</button>
+    </div>
+    <div id="kLink" hidden>
+      <label>URL Google Form <input name="formUrl" placeholder="https://docs.google.com/forms/d/e/.../viewform"></label>
+      <p class="meta">Pastikan form dapat diisi oleh siswa (tidak dibatasi akun tertentu jika ingin diakses publik).</p>
+    </div>`, async (fd, form) => {
+    const base = { judul: fd.get('judul'), mapelId: fd.get('mapelId'), kelas: fd.get('kelas') };
+    if (fd.get('mode') === 'link') {
+      await call('linkKuis', Object.assign(base, { formUrl: fd.get('formUrl') }));
+    } else {
+      const soal = $$('.qcard', form).map((c, i) => {
+        const tipe = $('.q-type', c).value, pertanyaan = $('.q-text', c).value.trim();
+        if (!pertanyaan) throw new Error('Pertanyaan soal ' + (i + 1) + ' masih kosong.');
+        const s = { tipe, pertanyaan, poin: $('.q-poin', c).value };
+        if (tipe === 'pg') {
+          const chosen = Number((c.querySelector('input[type=radio]:checked') || {}).value);
+          const opsi = []; let kunci = -1;
+          $$('.q-opt', c).forEach((inp, idx) => {
+            const t = inp.value.trim();
+            if (!t) return;
+            if (idx === chosen) kunci = opsi.length;
+            opsi.push(t);
+          });
+          if (opsi.length < 2) throw new Error('Soal ' + (i + 1) + ': isi minimal 2 opsi.');
+          if (kunci < 0) throw new Error('Soal ' + (i + 1) + ': opsi kunci jawaban tidak boleh kosong.');
+          s.opsi = opsi; s.kunci = kunci;
+        }
+        return s;
+      });
+      if (!soal.length) throw new Error('Tambahkan minimal 1 soal.');
+      await call('createKuis', Object.assign(base, { deskripsi: fd.get('deskripsi'), soal }));
+    }
+    toast('Kuis berhasil dibuat. Klik "Terbitkan" agar tampil di halaman utama.', 'ok'); go('kuis');
+  }, {
+    wide: true, submitLabel: 'Buat Kuis',
+    onOpen: form => {
+      const box = $('#soalBox', form);
+      const renum = () => $$('.qn', box).forEach((s, i) => s.textContent = i + 1);
+      const add = () => { box.insertAdjacentHTML('beforeend', soalHtml()); renum(); };
+      add();
+      $('#addQ', form).onclick = add;
+      box.addEventListener('click', e => { if (e.target.closest('[data-delq]')) { e.target.closest('.qcard').remove(); renum(); } });
+      box.addEventListener('change', e => {
+        if (e.target.classList.contains('q-type')) $('.q-opts', e.target.closest('.qcard')).hidden = e.target.value !== 'pg';
+      });
+      form.addEventListener('change', e => {
+        if (e.target.name === 'mode') {
+          const link = e.target.value === 'link';
+          $('#kNew', form).hidden = link; $('#kLink', form).hidden = !link;
+        }
+      });
+    }
+  });
+}
+
+/* ================== SETTING ================== */
+function logoToPng(file) {
+  return new Promise((ok, no) => {
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) return no(new Error('Format logo harus PNG, JPG, atau WEBP.'));
+    if (file.size > 5 * 1024 * 1024) return no(new Error('Ukuran file maksimal 5 MB.'));
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onerror = () => { URL.revokeObjectURL(url); no(new Error('File gambar tidak dapat dibaca.')); };
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let max = 512;
+      for (let t = 0; t < 3; t++) {
+        const sc = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * sc)); c.height = Math.max(1, Math.round(img.height * sc));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        const data = c.toDataURL('image/png').split(',')[1];
+        if (data.length < 1200000) return ok(data);
+        max = Math.round(max / 2);
+      }
+      no(new Error('Gambar terlalu kompleks. Gunakan gambar logo yang lebih sederhana.'));
+    };
+    img.src = url;
+  });
+}
+
+async function pgIdentitas() {
+  const st = S.pub.settings, logo = safeUrl(st.logoUrl);
+  $('#content').innerHTML = `<div class="pg-head"><h2>Identitas Sekolah</h2></div>
+    <div class="panel" style="max-width:680px;margin-bottom:16px">
+      <h3 style="margin-top:0">Logo Sekolah</h3>
+      <div class="logorow">
+        <div class="logoprev" id="logoPrev">${logo ? `<img src="${esc(logo)}" alt="Logo">` : 'Belum ada logo'}</div>
+        <div class="logoctl">
+          <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp">
+          <small class="meta">PNG, JPG, atau WEBP. Gambar otomatis diperkecil (maks. 512 px) dan disimpan di Google Drive.</small>
+          <div class="btns">
+            <button type="button" class="btn primary" id="btnLogoUp" disabled>Unggah Logo</button>
+            <button type="button" class="btn ghost" id="btnLogoDel"${logo ? '' : ' disabled'}>Hapus Logo</button>
+          </div>
+          ${logo ? `<label style="margin:12px 0 0">Link logo<input readonly id="logoLink" value="${esc(logo)}" onclick="this.select()"></label>` : ''}
+        </div>
+      </div>
+    </div>
+    <form class="panel" id="fId" style="max-width:680px">
+      <label>Nama sekolah<input name="namaSekolah" value="${esc(st.namaSekolah)}" required></label>
+      <label>Tagline<input name="tagline" value="${esc(st.tagline)}"></label>
+      <label>Deskripsi LMS (tampil di halaman utama)<textarea name="deskripsi">${esc(st.deskripsi)}</textarea></label>
+      <label>Alamat<input name="alamat" value="${esc(st.alamat)}"></label>
+      <button class="btn primary" type="submit">Simpan</button></form>`;
+
+  let logoData = null;
+  $('#logoFile').addEventListener('change', async ev => {
+    const f = ev.target.files[0];
+    logoData = null; $('#btnLogoUp').disabled = true;
+    if (!f) return;
+    try {
+      logoData = await logoToPng(f);
+      $('#logoPrev').innerHTML = `<img src="data:image/png;base64,${logoData}" alt="Pratinjau">`;
+      $('#btnLogoUp').disabled = false;
+    } catch (err) { toast(err.message, 'err'); ev.target.value = ''; }
+  });
+  $('#btnLogoUp').onclick = async () => {
+    if (!logoData) return;
+    const b = $('#btnLogoUp'); b.disabled = true; b.textContent = 'Mengunggah...';
+    try {
+      S.pub.settings = await call('uploadLogo', { data: logoData });
+      renderPublic(); toast('Logo berhasil diunggah.', 'ok'); pgIdentitas();
+    } catch (err) { toast(err.message, 'err'); b.disabled = false; b.textContent = 'Unggah Logo'; }
+  };
+  $('#btnLogoDel').onclick = async () => {
+    try { S.pub.settings = await call('removeLogo'); renderPublic(); toast('Logo dihapus.', 'ok'); pgIdentitas(); }
+    catch (err) { toast(err.message, 'err'); }
+  };
+
+  $('#fId').addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(e.target), o = {};
+    ['namaSekolah', 'tagline', 'deskripsi', 'alamat'].forEach(k => o[k] = fd.get(k));
+    try { S.pub.settings = await call('saveSettings', o); renderPublic(); toast('Identitas tersimpan.', 'ok'); }
+    catch (err) { toast(err.message, 'err'); }
+  });
+}
+
+/* ================== TEMA & IKON ================== */
+[['btnPass', 'key'], ['btnHome', 'home'], ['btnLogout', 'logout']].forEach(a => $('#' + a[0]).insertAdjacentHTML('afterbegin', ic(a[1])));
+$$('[data-theme-toggle]').forEach(b => { b.innerHTML = '<span class="ico-moon">' + ic('moon') + '</span><span class="ico-sun">' + ic('sun') + '</span>'; });
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-theme-toggle]')) return;
+  S.theme = document.documentElement.getAttribute('data-theme') === 'gelap' ? 'terang' : 'gelap';
+  themeStore.set(S.theme);
+  applyTheme(S.pub.settings || {});
+});
+
+/* ================== PENGUMPULAN & NILAI ================== */
+function kumpulData(jenis, it) {
+  const kl = (it.kelas || '').toLowerCase(), km = {};
+  S.db.kumpul.filter(k => k.jenis === jenis && k.refId === it.id).forEach(k => km[k.siswaId] = k);
+  return S.db.siswa.filter(x => x.aktif !== 'tidak' && (!kl || (x.kelas || '').toLowerCase() === kl)).map(x => {
+    const k = km[x.id] || {};
+    return { s: x, k, sudah: k.status === 'kumpul', late: !!(jenis === 'pemb' && it.deadline && k.waktu && k.waktu.slice(0, 10) > it.deadline) };
+  });
+}
+const kumpulCount = (jenis, it) => { const d = kumpulData(jenis, it); return d.filter(x => x.sudah).length + '/' + d.length; };
+const stLabel = x => x.sudah ? (x.late ? 'Terlambat' : 'Sudah') : 'Belum';
+
+function dlNilai(jenis, items, fname) {
+  if (!needXlsx()) return;
+  const rows = [['Judul', 'Mapel', 'Nama', 'Kelas', 'Status', 'Waktu', 'Nilai']];
+  items.forEach(it => kumpulData(jenis, it).forEach(x => rows.push([it.judul, mName(it.mapelId), x.s.nama, x.s.kelas, stLabel(x), x.k.waktu || '', x.k.nilai ? Number(x.k.nilai) : ''])));
+  const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 17 }, { wch: 8 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
+  XLSX.writeFile(wb, fname.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.xlsx');
+}
+
+function openKumpul(jenis, id) {
+  const it = (jenis === 'kuis' ? S.db.kuis : S.db.pemb).find(x => x.id === id);
+  if (!it) return;
+  const d = kumpulData(jenis, it), sudah = d.filter(x => x.sudah).length, pemb = jenis === 'pemb';
+  openForm('Pengumpulan: ' + it.judul, `
+    <p class="meta">Kelas: ${esc(it.kelas || 'Semua')} • <b>${sudah}</b> sudah mengumpulkan • <b>${d.length - sudah}</b> belum • ${d.length} siswa</p>
+    ${d.length ? '' : '<p class="err">Tidak ada siswa aktif pada kelas ini.</p>'}
+    <div class="tblwrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Waktu</th>${pemb ? '<th>Jawaban</th>' : ''}<th>Nilai</th></tr></thead><tbody>
+    ${d.map(x => `<tr><td>${esc(x.s.nama)}</td><td>${esc(x.s.kelas)}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td>${pemb ? `<td class="pre">${linkify(x.k.jawaban || '-')}</td>` : ''}<td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn ghost sm" id="kpXls">Unduh Excel</button>${!pemb && it.formId ? '<button type="button" class="btn ghost sm" id="kpSync">Ambil Nilai dari Google Form</button>' : ''}</div>`,
+    async (fd, form) => {
+      const list = $$('input[data-old]', form).filter(i => i.value.trim() !== i.dataset.old).map(i => ({ siswaId: i.name.slice(2), nilai: i.value.trim() }));
+      if (list.length) { await call('setNilai', { jenis, refId: id, list }); toast('Nilai tersimpan.', 'ok'); go(S.page); }
+    }, { wide: true, submitLabel: 'Simpan Nilai', onOpen: form => {
+      $('#kpXls', form).onclick = () => dlNilai(jenis, [it], 'nilai-' + it.judul);
+      const sy = $('#kpSync', form);
+      if (sy) sy.onclick = async () => {
+        sy.disabled = true;
+        try { const n = await call('syncKuis', { id }); toast(n + ' jawaban dicocokkan dengan data siswa.', 'ok'); modal.close(); go(S.page); }
+        catch (e) { toast(e.message, 'err'); sy.disabled = false; }
+      };
+    } });
+}
+
+/* ================== INIT ================== */
+(async function init() {
+  const t = store.get();
+  if (t) {
+    S.token = t;
+    try { S.user = await call('me'); } catch (e) { S.token = null; store.set(null); }
+  }
+  S.token ? (await loadPublic(), showApp()) : showPublic();
+})();
+</script>
 </body>
 </html>
