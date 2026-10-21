@@ -232,6 +232,13 @@ dialog{animation:pop .18s ease}
 .vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .lamp a{display:inline-block;margin-top:6px;font-size:12.5px}
 .lampbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 12px}
+.qhead .qpoin{margin:0 10px 0 auto;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.qpoin input{width:84px;margin:0}
+.qpair{display:flex;align-items:center;gap:8px;margin:6px 0}
+.qpair input,.qpair select{flex:1;margin:0;min-width:0}
+.qpair .pl{flex:1;font-weight:600}
+.qadd{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.qtotal{position:sticky;top:-1px;z-index:3;background:var(--card);padding:10px 0;margin:6px 0 10px;border-bottom:1px solid var(--line);font-weight:600}
 </style>
 </head>
 <body>
@@ -262,7 +269,7 @@ dialog{animation:pop .18s ease}
       <input type="search" id="pubSearch" placeholder="Cari materi atau kuis...">
       <select id="pubMapel"><option value="">Semua mata pelajaran</option></select>
     </div>
-    <h2 class="sec-title" id="sec-belajar">Pembelajaran</h2>
+    <h2 class="sec-" id="sec-belajar">Pembelajaran</h2>
     <div class="grid" id="pubPemb"></div>
     <h2 class="sec-title" id="sec-kuis">Kuis Online</h2>
     <div class="grid" id="pubKuis"></div>
@@ -372,7 +379,7 @@ async function call(action, data) {
   if (WRITES.has(action)) await loadDb();
   return r.data;
 }
-const WRITES = new Set(['save', 'remove', 'savePembelajaran', 'removePembelajaran', 'createKuis', 'linkKuis', 'setKuisStatus', 'removeKuis', 'importSiswa', 'setNilai', 'syncKuis']);
+const WRITES = new Set(['save', 'remove', 'savePembelajaran', 'removePembelajaran', 'saveKuis', 'setKuisStatus', 'removeKuis', 'importSiswa', 'setNilai']);
 async function loadDb() { S.db = await call('bootstrap'); S.mapel = S.db.mapel; }
 
 function sessionEnded() {
@@ -435,7 +442,7 @@ async function loadPublic() {
 
 function renderPublic() {
   const st = S.pub.settings;
-  document.title = 'LMS SMP IT Al Mubarok';
+  document.title = 'LSM SMP IT AL MUBAROK';
   $('#brandName').textContent = st.namaSekolah;
   $('#sideName').textContent = st.namaSekolah;
   setLogo($('#brandLogo'), st.logoUrl); setLogo($('#sideLogo'), st.logoUrl);
@@ -469,7 +476,7 @@ function drawPublicLists() {
       <div><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''}</div>
       <h3>${esc(r.judul)}</h3>
       <div class="meta grow">${esc(r.guruNama)} • ${esc((r.tanggal || '').slice(0, 10))}</div>
-      <button class="btn primary" data-kuis="${esc(r.id)}">Kerjakan Kuis</button>
+      <span class="chip">${r.jml || 0} soal • ${r.total || 0} poin</span> <button class="btn primary" data-kuis="${esc(r.id)}">Kerjakan Kuis</button>
     </div>`).join('') : '<div class="empty">Belum ada kuis yang diterbitkan.</div>';
 }
 
@@ -485,28 +492,70 @@ function openMateri(id) {
   if (r) pickForm(r.judul, r.kelas, 'Pilih nama Anda untuk membuka materi dan mengumpulkan tugas.', sid => setTimeout(() => showMateri(r, sid), 0));
 }
 
+function setupUpload(form, send) {
+  const btn = $('#btnUpl', form), fi = $('#fUpl', form), info = $('#uplInfo', form), ta = form.querySelector('[name=jawaban]');
+  btn.onclick = () => fi.click();
+  fi.onchange = async () => {
+    const f = fi.files[0]; if (!f) return;
+    btn.disabled = true; info.textContent = 'Mengunggah ' + f.name + '...';
+    try {
+      const data = (f.type.startsWith('image/') && f.type !== 'image/gif') ? await imgB64(f) : await readB64(f);
+      const url = await send(data);
+      ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + url;
+      info.textContent = 'File terunggah dan tautannya ditambahkan ke jawaban.';
+    } catch (e) { info.textContent = ''; toast(e.message, 'err'); }
+    btn.disabled = false; fi.value = '';
+  };
+}
+
 function showMateri(r, sid) {
   openForm(r.judul, `
     <p class="meta"><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''} Oleh ${esc(r.guruNama)}</p>
     <div class="tabs"><button type="button" class="tab on" data-tab="t1">Pembahasan</button><button type="button" class="tab" data-tab="t2">Tugas</button></div>
     <div class="tabpane" id="t1"><div class="pre">${linkify(r.pembahasan) || '<i>Belum ada pembahasan.</i>'}</div>${mediaHtml(r.lampiran)}</div>
     <div class="tabpane" id="t2" hidden><div class="pre">${r.deadline ? `<b>Batas pengumpulan: ${esc(r.deadline)}</b><br><br>` : ''}${linkify(r.tugas) || '<i>Tidak ada tugas.</i>'}</div>
-      <label style="margin-top:16px">Jawaban tugas / tautan hasil kerja<textarea name="jawaban" placeholder="Tulis jawaban atau tempel tautan (Google Drive, dll), lalu klik Kirim Tugas"></textarea></label></div>`,
+      <label style="margin-top:16px">Jawaban tugas <small>(ketik langsung, tempel tautan, atau unggah file)</small><textarea name="jawaban" style="min-height:130px" placeholder="Ketik jawaban Anda di sini, atau tempel tautan Google Drive, lalu klik Kirim Tugas"></textarea></label>
+      <div class="lampbar"><button type="button" class="btn ghost sm" id="btnUpl">Unggah Gambar / PDF</button><input type="file" id="fUpl" accept="image/*,application/pdf" hidden><small id="uplInfo">Maks. sekitar 4,5 MB per file.</small></div></div>`,
     async fd => {
       const x = await run('pubAction', 'tugas', r.id, sid, fd.get('jawaban'));
       if (!x.ok) throw new Error(x.error);
       toast('Tugas berhasil dikirim.', 'ok');
-    }, { wide: true, submitLabel: 'Kirim Tugas' });
+    }, { wide: true, submitLabel: 'Kirim Tugas', onOpen: form => setupUpload(form, async data => {
+      const x = await run('pubAction', 'upload', r.id, sid, data);
+      if (!x.ok) throw new Error(x.error);
+      return x.url;
+    }) });
 }
 
 function openKuis(id) {
   const k = S.pub.kuis.find(x => x.id === id);
   if (!k) return;
-  pickForm(k.judul, k.kelas, 'Pilih nama Anda sebelum mengerjakan kuis.', async (sid, sw) => {
+  pickForm(k.judul, k.kelas, 'Pilih nama Anda sebelum mengerjakan kuis.', async sid => {
     const x = await run('pubAction', 'kuis', id, sid);
     if (!x.ok) throw new Error(x.error);
-    setTimeout(() => openForm(k.judul, `<p>Halo, <b>${esc(sw ? sw.nama : '')}</b>. Klik tombol di bawah untuk mengerjakan kuis.</p><a class="btn primary" target="_blank" rel="noopener" href="${esc(safeUrl(x.url))}">Kerjakan Kuis</a>`, null, { noSubmit: true }), 0);
+    setTimeout(() => x.done ? showHasil(k, x) : showKuis(k, x, sid), 0);
   });
+}
+
+function showHasil(k, x) {
+  openForm(k.judul, `<p>Kuis ini sudah Anda kerjakan.</p><p style="font-size:22px;margin:8px 0"><b>Skor: ${esc(x.nilai)}</b> dari ${esc(x.total)} poin</p>${Number(x.manual) ? `<p class="meta">Soal uraian (${esc(x.manual)} poin) dinilai manual oleh guru, sehingga skor akhir dapat berubah.</p>` : ''}`, null, { noSubmit: true });
+}
+
+function showKuis(k, x, sid) {
+  const body = (s, i) => s.tipe === 'pg'
+    ? s.opsi.map((o, j) => `<label class="chk"><input type="radio" name="q${i}" value="${j}"> ${String.fromCharCode(65 + j)}. ${esc(o)}</label>`).join('')
+    : s.tipe === 'jodoh'
+      ? s.kiri.map((l, j) => `<div class="qpair"><span class="pl">${esc(l)}</span><select name="q${i}_${j}"><option value="">-- pilih pasangan --</option>${s.kanan.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('')}</select></div>`).join('')
+      : `<textarea name="q${i}" placeholder="Tulis jawaban Anda"></textarea>`;
+  openForm(k.judul, `${x.deskripsi ? `<p class="pre meta">${esc(x.deskripsi)}</p>` : ''}<div class="qtotal">${x.soal.length} soal • Total <b>${esc(x.total)}</b> poin</div>` +
+    x.soal.map((s, i) => `<div class="qcard"><div class="qhead"><b>Soal ${i + 1}</b><span class="chip">${esc(s.poin)} poin</span></div><div class="pre" style="margin-bottom:8px">${esc(s.pertanyaan)}</div>${s.tipe === 'jodoh' ? '<small class="meta">Pilih pasangan yang tepat untuk setiap item.</small>' : ''}${body(s, i)}</div>`).join(''),
+    async fd => {
+      if (!confirm('Kirim jawaban sekarang? Jawaban tidak dapat diubah setelah dikirim.')) throw new Error('Pengiriman dibatalkan.');
+      const jaw = x.soal.map((s, i) => s.tipe === 'jodoh' ? s.kiri.map((_, j) => fd.get('q' + i + '_' + j) || '') : (fd.get('q' + i) || ''));
+      const r = await run('pubAction', 'kuisKirim', k.id, sid, jaw);
+      if (!r.ok) throw new Error(r.error);
+      setTimeout(() => showHasil(k, r), 0);
+    }, { wide: true, submitLabel: 'Kirim Jawaban' });
 }
 
 document.addEventListener('click', e => {
@@ -950,109 +999,118 @@ async function pgKuis() {
   const admin = S.user.role === 'admin';
   $('#content').innerHTML = `
     <div class="pg-head"><h2>Kuis Online</h2><button class="btn ghost" id="btnRekap">Unduh Nilai (Excel)</button><button class="btn primary" id="btnAdd">+ Kuis Baru</button></div>
-    <p class="meta">Kuis dibuat sebagai Google Form dan otomatis berbentuk quiz (penilaian otomatis untuk pilihan ganda).</p>
-    <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th>${admin ? '<th>Guru</th>' : ''}<th>Status</th><th>Dibuat</th><th>Pengumpulan</th><th>Aksi</th></tr></thead>
-    <tbody>${rows.length ? rows.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td>
+    <p class="meta">Pilihan ganda dan menjodohkan dinilai otomatis; soal uraian dinilai manual oleh guru lewat kolom nilai di detail pengumpulan.</p>
+    <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th><th>Soal / Poin</th>${admin ? '<th>Guru</th>' : ''}<th>Status</th><th>Dibuat</th><th>Pengumpulan</th><th>Aksi</th></tr></thead>
+    <tbody>${rows.length ? rows.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td><td>${kuisInfo(r)}</td>
       ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${badge(r.status)}</td><td>${esc((r.tanggal || '').slice(0, 10))}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('kuis', r)} sudah</button></td>
-      <td class="act">${safeUrl(r.editUrl) ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${esc(r.editUrl)}">Edit Form</a>` : ''}
-      ${safeUrl(r.formUrl) ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${esc(r.formUrl)}">Buka</a>` : ''}
+      <td class="act"><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
       <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
-      <button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td></tr>`).join('') : '<tr><td colspan="8" class="loading">Belum ada kuis.</td></tr>'}</tbody></table></div>`;
-  $('#btnAdd').onclick = kuisForm;
+      <button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td></tr>`).join('') : '<tr><td colspan="9" class="loading">Belum ada kuis.</td></tr>'}</tbody></table></div>`;
+  $('#btnAdd').onclick = () => kuisForm();
   $('#btnRekap').onclick = () => dlNilai('kuis', S.db.kuis, 'nilai-kuis');
   $('#content').querySelector('tbody').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'); if (b) openKumpul('kuis', b.dataset.kumpul); });
   $('#content').querySelector('tbody').addEventListener('click', async ev => {
-    const tg = ev.target.closest('[data-toggle]'), dl = ev.target.closest('[data-del]');
+    const tg = ev.target.closest('[data-toggle]'), dl = ev.target.closest('[data-del]'), ed = ev.target.closest('[data-edit]');
     try {
+      if (ed) kuisForm(S.rows.find(x => x.id === ed.dataset.edit));
       if (tg) {
         const r = S.rows.find(x => x.id === tg.dataset.toggle);
         await call('setKuisStatus', { id: r.id, status: r.status === 'terbit' ? 'draf' : 'terbit' });
         toast(r.status === 'terbit' ? 'Kuis ditarik.' : 'Kuis diterbitkan di halaman utama.', 'ok'); go('kuis');
       }
-      if (dl && confirm('Hapus kuis dari daftar? (Google Form tetap ada di Drive Anda)')) { await call('removeKuis', { id: dl.dataset.del }); toast('Dihapus.', 'ok'); go('kuis'); }
+      if (dl && confirm('Hapus kuis ini beserta soalnya?')) { await call('removeKuis', { id: dl.dataset.del }); toast('Dihapus.', 'ok'); go('kuis'); }
     } catch (err) { toast(err.message, 'err'); }
   });
 }
 
 let qSeq = 0;
-function soalHtml() {
-  const n = ++qSeq;
-  return `<div class="qcard"><div class="qhead"><b>Soal <span class="qn"></span></b><button type="button" class="btn sm danger" data-delq>Hapus</button></div>
-    <input class="q-text" placeholder="Tulis pertanyaan">
-    <div class="row" style="margin-top:8px">
-      <select class="q-type"><option value="pg">Pilihan ganda</option><option value="uraian">Uraian (dinilai manual)</option></select>
-      <input class="q-poin" type="number" min="0" max="100" value="10" title="Poin">
-    </div>
-    <div class="q-opts">${['A', 'B', 'C', 'D'].map((L, i) => `<div class="qopt"><input type="radio" name="key${n}" value="${i}"${i === 0 ? ' checked' : ''} title="Kunci jawaban"><input type="text" class="q-opt" placeholder="Opsi ${L}"></div>`).join('')}
-      <small class="meta">Pilih tombol radio di sebelah opsi yang benar.</small></div></div>`;
+function kuisStat(r) {
+  let q = []; try { q = JSON.parse(r.soal || '[]'); } catch (e) {}
+  return { n: q.length, total: Math.round(q.reduce((t, x) => t + (Number(x.poin) || 0), 0) * 100) / 100 };
+}
+const kuisInfo = r => { const t = kuisStat(r); return t.n + ' soal • ' + t.total + ' poin'; };
+
+function kuisJaw(it, k) {
+  if (!k.jawaban) return '-';
+  try {
+    const j = JSON.parse(k.jawaban), soal = JSON.parse(it.soal || '[]');
+    const ur = soal.map((s, i) => s.tipe === 'uraian' ? `<div><small>${esc(s.pertanyaan)}</small><br>${esc(j.a[i] || '-')}</div>` : '').join('');
+    return `<small>Skor otomatis: ${esc(j.auto)}${j.manual ? ' • uraian ' + esc(j.manual) + ' poin menunggu nilai guru' : ''}</small>${ur ? `<details><summary>Jawaban uraian</summary>${ur}</details>` : ''}`;
+  } catch (e) { return '-'; }
 }
 
-function kuisForm() {
+const pairRow = p => `<div class="qpair"><input class="p-l" placeholder="Kiri" value="${esc(p[0])}"><span>↔</span><input class="p-r" placeholder="Pasangan" value="${esc(p[1])}"><button type="button" class="btn sm ghost" data-delpair title="Hapus pasangan">×</button></div>`;
+
+function soalHtml(s) {
+  const t = s.tipe || 'pg', n = ++qSeq;
+  const opsi = s.opsi && s.opsi.length ? s.opsi : ['', '', '', ''], ps = s.pasangan && s.pasangan.length ? s.pasangan : [['', ''], ['', ''], ['', '']];
+  const lab = { pg: 'Pilihan ganda', jodoh: 'Menjodohkan', uraian: 'Uraian (dinilai manual)' }[t];
+  return `<div class="qcard" data-tipe="${t}"><div class="qhead"><b>Soal <span class="qn"></span> <small class="meta">· ${lab}</small></b>
+      <label class="qpoin">Poin <input class="q-poin" type="number" min="0" max="100" step="any" value="${esc(s.poin == null ? 10 : s.poin)}"></label>
+      <button type="button" class="btn sm danger" data-delq>Hapus</button></div>
+    <textarea class="q-text" placeholder="Tulis pertanyaan / petunjuk soal">${esc(s.pertanyaan || '')}</textarea>
+    ${t === 'pg' ? `<div class="q-opts">${opsi.map((o, i) => `<div class="qopt"><input type="radio" name="key${n}" value="${i}"${i === Number(s.kunci || 0) ? ' checked' : ''} title="Kunci jawaban"><input type="text" class="q-opt" placeholder="Opsi ${String.fromCharCode(65 + i)}" value="${esc(o)}"></div>`).join('')}
+      <small class="meta">Pilih tombol radio di sebelah opsi yang benar.</small></div>` : ''}
+    ${t === 'jodoh' ? `<div class="q-pairs">${ps.map(pairRow).join('')}<button type="button" class="btn ghost sm" data-addpair>+ Pasangan</button>
+      <small class="meta">Siswa mencocokkan kolom kiri dengan kolom kanan (urutan kanan diacak). Poin dibagi rata per pasangan.</small></div>` : ''}</div>`;
+}
+
+function kuisForm(item) {
   const mp = S.mapel || [];
   if (!mp.length) { toast('Tambahkan data mata pelajaran terlebih dahulu.', 'err'); return; }
-  openForm('Kuis Online Baru', `
-    <div class="seg"><label><input type="radio" name="mode" value="new" checked> Buat soal baru</label><label><input type="radio" name="mode" value="link"> Tautkan Google Form yang sudah ada</label></div>
-    <label>Judul kuis<input name="judul" required></label>
+  let soal0 = []; try { soal0 = JSON.parse((item && item.soal) || '[]'); } catch (e) {}
+  openForm(item ? 'Edit Kuis' : 'Kuis Online Baru', `
+    <label>Judul kuis<input name="judul" value="${esc(item ? item.judul : '')}" required></label>
     <div class="row">
-      <label>Mata Pelajaran<select name="mapelId">${mp.map(m => `<option value="${esc(m.id)}">${esc(m.nama)}</option>`).join('')}</select></label>
-      <label>Kelas<input name="kelas" placeholder="mis. X IPA 1"></label>
+      <label>Mata Pelajaran<select name="mapelId">${mp.map(m => `<option value="${esc(m.id)}"${item && item.mapelId === m.id ? ' selected' : ''}>${esc(m.nama)}</option>`).join('')}</select></label>
+      <label>Kelas<input name="kelas" value="${esc(item ? item.kelas : '')}" placeholder="mis. X IPA 1"></label>
     </div>
-    <div id="kNew">
-      <label>Deskripsi / petunjuk<textarea name="deskripsi" style="min-height:70px"></textarea></label>
-      <div id="soalBox"></div>
-      <button type="button" class="btn ghost" id="addQ">+ Tambah Soal</button>
-    </div>
-    <div id="kLink" hidden>
-      <label>URL Google Form <input name="formUrl" placeholder="https://docs.google.com/forms/d/e/.../viewform"></label>
-      <p class="meta">Pastikan form dapat diisi oleh siswa (tidak dibatasi akun tertentu jika ingin diakses publik).</p>
-    </div>`, async (fd, form) => {
-    const base = { judul: fd.get('judul'), mapelId: fd.get('mapelId'), kelas: fd.get('kelas') };
-    if (fd.get('mode') === 'link') {
-      await call('linkKuis', Object.assign(base, { formUrl: fd.get('formUrl') }));
-    } else {
-      const soal = $$('.qcard', form).map((c, i) => {
-        const tipe = $('.q-type', c).value, pertanyaan = $('.q-text', c).value.trim();
-        if (!pertanyaan) throw new Error('Pertanyaan soal ' + (i + 1) + ' masih kosong.');
-        const s = { tipe, pertanyaan, poin: $('.q-poin', c).value };
-        if (tipe === 'pg') {
-          const chosen = Number((c.querySelector('input[type=radio]:checked') || {}).value);
-          const opsi = []; let kunci = -1;
-          $$('.q-opt', c).forEach((inp, idx) => {
-            const t = inp.value.trim();
-            if (!t) return;
-            if (idx === chosen) kunci = opsi.length;
-            opsi.push(t);
-          });
-          if (opsi.length < 2) throw new Error('Soal ' + (i + 1) + ': isi minimal 2 opsi.');
-          if (kunci < 0) throw new Error('Soal ' + (i + 1) + ': opsi kunci jawaban tidak boleh kosong.');
-          s.opsi = opsi; s.kunci = kunci;
-        }
-        return s;
-      });
-      if (!soal.length) throw new Error('Tambahkan minimal 1 soal.');
-      await call('createKuis', Object.assign(base, { deskripsi: fd.get('deskripsi'), soal }));
-    }
-    toast('Kuis berhasil dibuat. Klik "Terbitkan" agar tampil di halaman utama.', 'ok'); go('kuis');
-  }, {
-    wide: true, submitLabel: 'Buat Kuis',
-    onOpen: form => {
-      const box = $('#soalBox', form);
-      const renum = () => $$('.qn', box).forEach((s, i) => s.textContent = i + 1);
-      const add = () => { box.insertAdjacentHTML('beforeend', soalHtml()); renum(); };
-      add();
-      $('#addQ', form).onclick = add;
-      box.addEventListener('click', e => { if (e.target.closest('[data-delq]')) { e.target.closest('.qcard').remove(); renum(); } });
-      box.addEventListener('change', e => {
-        if (e.target.classList.contains('q-type')) $('.q-opts', e.target.closest('.qcard')).hidden = e.target.value !== 'pg';
-      });
-      form.addEventListener('change', e => {
-        if (e.target.name === 'mode') {
-          const link = e.target.value === 'link';
-          $('#kNew', form).hidden = link; $('#kLink', form).hidden = !link;
-        }
-      });
-    }
-  });
+    <label>Petunjuk pengerjaan<textarea name="deskripsi" style="min-height:70px">${esc(item ? item.deskripsi : '')}</textarea></label>
+    <div class="qtotal"><b id="qCount">0</b> soal • Total <b id="qTotal">0</b> poin</div>
+    <div id="soalBox"></div>
+    <div class="qadd"><button type="button" class="btn ghost" data-add="pg">+ Pilihan Ganda</button><button type="button" class="btn ghost" data-add="jodoh">+ Menjodohkan</button><button type="button" class="btn ghost" data-add="uraian">+ Uraian</button></div>`,
+  async (fd, form) => {
+    const soal = $$('.qcard', form).map((c, i) => {
+      const tipe = c.dataset.tipe, pertanyaan = $('.q-text', c).value.trim(), no = 'Soal ' + (i + 1) + ': ', poin = Number($('.q-poin', c).value);
+      if (!pertanyaan) throw new Error(no + 'pertanyaan masih kosong.');
+      if (!(poin > 0)) throw new Error(no + 'poin harus lebih dari 0.');
+      const q = { tipe, pertanyaan, poin };
+      if (tipe === 'pg') {
+        const chosen = Number((c.querySelector('input[type=radio]:checked') || {}).value);
+        const opsi = []; let kunci = -1;
+        $$('.q-opt', c).forEach((inp, idx) => { const t = inp.value.trim(); if (!t) return; if (idx === chosen) kunci = opsi.length; opsi.push(t); });
+        if (opsi.length < 2) throw new Error(no + 'isi minimal 2 opsi.');
+        if (kunci < 0) throw new Error(no + 'opsi kunci jawaban tidak boleh kosong.');
+        q.opsi = opsi; q.kunci = kunci;
+      } else if (tipe === 'jodoh') {
+        q.pasangan = $$('.qpair', c).map(p => [$('.p-l', p).value.trim(), $('.p-r', p).value.trim()]).filter(p => p[0] || p[1]);
+        if (q.pasangan.length < 2 || q.pasangan.some(p => !p[0] || !p[1])) throw new Error(no + 'isi minimal 2 pasangan yang lengkap (kiri dan kanan).');
+      }
+      return q;
+    });
+    if (!soal.length) throw new Error('Tambahkan minimal 1 soal.');
+    const o = { judul: fd.get('judul'), mapelId: fd.get('mapelId'), kelas: fd.get('kelas'), deskripsi: fd.get('deskripsi'), soal };
+    if (item) o.id = item.id;
+    await call('saveKuis', { item: o });
+    toast(item ? 'Kuis diperbarui.' : 'Kuis tersimpan. Klik "Terbitkan" agar tampil di halaman utama.', 'ok'); go('kuis');
+  }, { wide: true, submitLabel: item ? 'Simpan Perubahan' : 'Simpan Kuis', onOpen: form => {
+    const box = $('#soalBox', form);
+    const upd = () => {
+      $$('.qn', box).forEach((e, i) => e.textContent = i + 1);
+      $('#qCount', form).textContent = $$('.qcard', box).length;
+      $('#qTotal', form).textContent = Math.round($$('.q-poin', box).reduce((t, i) => t + (Number(i.value) || 0), 0) * 100) / 100;
+    };
+    const add = q => { box.insertAdjacentHTML('beforeend', soalHtml(q)); upd(); };
+    (soal0.length ? soal0 : [{ tipe: 'pg' }]).forEach(add);
+    form.addEventListener('click', e => {
+      const a = e.target.closest('[data-add]'), ap = e.target.closest('[data-addpair]'), dp = e.target.closest('[data-delpair]');
+      if (a) { add({ tipe: a.dataset.add }); box.lastElementChild.scrollIntoView({ block: 'nearest' }); }
+      else if (e.target.closest('[data-delq]')) { e.target.closest('.qcard').remove(); upd(); }
+      else if (ap) ap.insertAdjacentHTML('beforebegin', pairRow(['', '']));
+      else if (dp) dp.closest('.qpair').remove();
+    });
+    form.addEventListener('input', e => { if (e.target.classList.contains('q-poin')) upd(); });
+  } });
 }
 
 /* ================== SETTING ================== */
@@ -1176,20 +1234,14 @@ function openKumpul(jenis, id) {
   openForm('Pengumpulan: ' + it.judul, `
     <p class="meta">Kelas: ${esc(it.kelas || 'Semua')} • <b>${sudah}</b> sudah mengumpulkan • <b>${d.length - sudah}</b> belum • ${d.length} siswa</p>
     ${d.length ? '' : '<p class="err">Tidak ada siswa aktif pada kelas ini.</p>'}
-    <div class="tblwrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Waktu</th>${pemb ? '<th>Jawaban</th>' : ''}<th>Nilai</th></tr></thead><tbody>
-    ${d.map(x => `<tr><td>${esc(x.s.nama)}</td><td>${esc(x.s.kelas)}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td>${pemb ? `<td class="pre">${linkify(x.k.jawaban || '-')}</td>` : ''}<td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn ghost sm" id="kpXls">Unduh Excel</button>${!pemb && it.formId ? '<button type="button" class="btn ghost sm" id="kpSync">Ambil Nilai dari Google Form</button>' : ''}</div>`,
+    <div class="tblwrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Waktu</th><th>Jawaban</th><th>Nilai</th></tr></thead><tbody>
+    ${d.map(x => `<tr><td>${esc(x.s.nama)}</td><td>${esc(x.s.kelas)}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td><td class="pre">${pemb ? linkify(x.k.jawaban || '-') : kuisJaw(it, x.k)}</td><td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn ghost sm" id="kpXls">Unduh Excel</button></div>`,
     async (fd, form) => {
       const list = $$('input[data-old]', form).filter(i => i.value.trim() !== i.dataset.old).map(i => ({ siswaId: i.name.slice(2), nilai: i.value.trim() }));
       if (list.length) { await call('setNilai', { jenis, refId: id, list }); toast('Nilai tersimpan.', 'ok'); go(S.page); }
     }, { wide: true, submitLabel: 'Simpan Nilai', onOpen: form => {
       $('#kpXls', form).onclick = () => dlNilai(jenis, [it], 'nilai-' + it.judul);
-      const sy = $('#kpSync', form);
-      if (sy) sy.onclick = async () => {
-        sy.disabled = true;
-        try { const n = await call('syncKuis', { id }); toast(n + ' jawaban dicocokkan dengan data siswa.', 'ok'); modal.close(); go(S.page); }
-        catch (e) { toast(e.message, 'err'); sy.disabled = false; }
-      };
     } });
 }
 
