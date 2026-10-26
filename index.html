@@ -240,6 +240,18 @@ dialog{animation:pop .18s ease}
 .qpair .pl{flex:1;font-weight:600}
 .qadd{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .qtotal{position:sticky;top:-1px;z-index:3;background:var(--card);padding:10px 0;margin:6px 0 10px;border-bottom:1px solid var(--line);font-weight:600}
+.uq{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;white-space:normal}
+.u-in{width:72px;margin:0 4px}
+html{scroll-behavior:smooth}
+#sec-belajar{scroll-margin-top:84px}
+.hero{min-height:calc(100vh - 64px);min-height:calc(100svh - 64px);display:flex;align-items:center}
+.hero .wrap{width:100%}
+.hero.has-img{background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 55%,transparent),rgba(0,0,0,.62)),var(--hero-img) center/cover no-repeat}
+.hero.has-img h1,.hero.has-img .tag,.hero.has-img .desc,.hero.has-img .addr{text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.scrollcue{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center;animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
+.heroprev{height:150px;border-radius:12px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:10px;color:var(--muted)}
+.heroprev img{width:100%;height:100%;object-fit:cover}
 </style>
 </head>
 <body>
@@ -263,6 +275,7 @@ dialog{animation:pop .18s ease}
       <p class="addr" id="heroAddr"></p>
       <div class="stats" id="pubStats"></div>
     </div>
+    <a class="scrollcue" href="#sec-belajar" aria-label="Gulir ke daftar pembelajaran"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></a>
   </section>
 
   <main class="wrap">
@@ -380,7 +393,7 @@ async function call(action, data) {
   if (WRITES.has(action)) await loadDb();
   return r.data;
 }
-const WRITES = new Set(['save', 'remove', 'savePembelajaran', 'removePembelajaran', 'saveKuis', 'setKuisStatus', 'removeKuis', 'importSiswa', 'setNilai']);
+const WRITES = new Set(['save', 'remove', 'savePembelajaran', 'removePembelajaran', 'saveKuis', 'setKuisStatus', 'removeKuis', 'importSiswa', 'setNilai', 'skorUraian']);
 async function loadDb() { S.db = await call('bootstrap'); S.mapel = S.db.mapel; }
 
 function sessionEnded() {
@@ -443,11 +456,14 @@ async function loadPublic() {
 
 function renderPublic() {
   const st = S.pub.settings;
-  document.title = 'LMS SMP IT AL MUBAROK';
+  document.title = st.namaSekolah + ' - LMS';
   $('#brandName').textContent = st.namaSekolah;
   $('#sideName').textContent = st.namaSekolah;
   setLogo($('#brandLogo'), st.logoUrl); setLogo($('#sideLogo'), st.logoUrl);
   $('#heroTitle').textContent = st.namaSekolah;
+  const hu = safeUrl(st.heroUrl), hs = $('#sec-info');
+  hs.classList.toggle('has-img', !!hu);
+  if (hu) hs.style.setProperty('--hero-img', 'url("' + hu + '")'); else hs.style.removeProperty('--hero-img');
   $('#heroTag').textContent = st.tagline;
   $('#heroDesc').textContent = st.deskripsi;
   $('#heroAddr').textContent = st.alamat;
@@ -889,14 +905,14 @@ async function pgPemb() {
   S.rows = rows;
   const admin = S.user.role === 'admin';
   $('#content').innerHTML = `
-    <div class="pg-head"><h2>Pembelajaran</h2><input type="search" id="q" placeholder="Cari..."><button class="btn ghost" id="btnRekap">Unduh Nilai (Excel)</button><button class="btn primary" id="btnAdd">+ Pembelajaran Baru</button></div>
+    <div class="pg-head"><h2>Pembelajaran</h2><input type="search" id="q" placeholder="Cari..."><button class="btn primary" id="btnAdd">+ Pembelajaran Baru</button></div>
     <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th>${admin ? '<th>Guru</th>' : ''}<th>Batas Tugas</th><th>Status</th><th>Pengumpulan</th><th>Aksi</th></tr></thead><tbody id="tb"></tbody></table></div>`;
   const draw = () => {
     const q = $('#q').value.trim().toLowerCase();
     const list = S.rows.filter(r => !q || (r.judul + ' ' + mName(r.mapelId) + ' ' + r.kelas).toLowerCase().includes(q));
     $('#tb').innerHTML = list.length ? list.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td>
       ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${esc(r.deadline || '-')}</td><td>${badge(r.status)}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('pemb', r)} sudah</button></td>
-      <td class="act"><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
+      <td class="act"><button class="btn sm ghost" data-xls="${esc(r.id)}">Unduh Nilai</button><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
       <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
       <button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td></tr>`).join('')
       : `<tr><td colspan="8" class="loading">Belum ada pembelajaran. Klik "+ Pembelajaran Baru".</td></tr>`;
@@ -904,8 +920,7 @@ async function pgPemb() {
   draw();
   $('#q').addEventListener('input', draw);
   $('#btnAdd').onclick = () => pembForm(null);
-  $('#btnRekap').onclick = () => dlNilai('pemb', S.db.pemb, 'nilai-pembelajaran');
-  $('#tb').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'); if (b) openKumpul('pemb', b.dataset.kumpul); });
+  $('#tb').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'), x = ev.target.closest('[data-xls]'); if (b) openKumpul('pemb', b.dataset.kumpul); if (x) dlNilaiTugas(S.db.pemb.find(r => r.id === x.dataset.xls)); });
   $('#tb').addEventListener('click', async ev => {
     const ed = ev.target.closest('[data-edit]'), dl = ev.target.closest('[data-del]'), tg = ev.target.closest('[data-toggle]');
     try {
@@ -923,13 +938,13 @@ async function pgPemb() {
 function readB64(file) {
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(new Error('Gagal membaca file.')); r.readAsDataURL(file); });
 }
-async function imgB64(file) {
+async function imgB64(file, max, q) {
   const url = URL.createObjectURL(file), img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('Gambar tidak valid.')); img.src = url; });
-  const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  const k = Math.min(1, (max || 1600) / Math.max(img.width, img.height)), c = document.createElement('canvas');
   c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-  return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+  return c.toDataURL('image/jpeg', q || 0.85).split(',')[1];
 }
 
 /** Lampiran materi: YouTube & Google Drive tampil siap putar, gambar/PDF/video langsung ditampilkan. */
@@ -999,17 +1014,16 @@ async function pgKuis() {
   S.rows = rows;
   const admin = S.user.role === 'admin';
   $('#content').innerHTML = `
-    <div class="pg-head"><h2>Kuis Online</h2><button class="btn ghost" id="btnRekap">Unduh Nilai (Excel)</button><button class="btn primary" id="btnAdd">+ Kuis Baru</button></div>
-    <p class="meta">Pilihan ganda dan menjodohkan dinilai otomatis; soal uraian dinilai manual oleh guru lewat kolom nilai di detail pengumpulan.</p>
+    <div class="pg-head"><h2>Kuis Online</h2><button class="btn primary" id="btnAdd">+ Kuis Baru</button></div>
+    <p class="meta">Pilihan ganda dan menjodohkan dinilai otomatis; soal uraian dikoreksi guru per soal di detail pengumpulan, lalu nilai total otomatis dijumlahkan.</p>
     <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th><th>Soal / Poin</th><th>Batas Akhir</th>${admin ? '<th>Guru</th>' : ''}<th>Status</th><th>Dibuat</th><th>Pengumpulan</th><th>Aksi</th></tr></thead>
     <tbody>${rows.length ? rows.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td><td>${kuisInfo(r)}</td><td>${esc(r.deadline || '-')}</td>
-      ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${badge(r.status)}</td><td>${esc((r.tanggal || '').slice(0, 10))}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('kuis', r)} sudah</button></td>
-      <td class="act"><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
+      ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${badge(r.status)}${r.status === 'draf' && r.deadline && r.deadline < todayStr() ? '<br><small class="meta">batas akhir lewat</small>' : ''}</td><td>${esc((r.tanggal || '').slice(0, 10))}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('kuis', r)} sudah</button></td>
+      <td class="act"><button class="btn sm ghost" data-xls="${esc(r.id)}">Unduh Nilai</button><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
       <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
       <button class="btn sm danger" data-del="${esc(r.id)}">Hapus</button></td></tr>`).join('') : '<tr><td colspan="10" class="loading">Belum ada kuis.</td></tr>'}</tbody></table></div>`;
   $('#btnAdd').onclick = () => kuisForm();
-  $('#btnRekap').onclick = () => dlNilai('kuis', S.db.kuis, 'nilai-kuis');
-  $('#content').querySelector('tbody').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'); if (b) openKumpul('kuis', b.dataset.kumpul); });
+  $('#content').querySelector('tbody').addEventListener('click', ev => { const b = ev.target.closest('[data-kumpul]'), x = ev.target.closest('[data-xls]'); if (b) openKumpul('kuis', b.dataset.kumpul); if (x) dlNilaiKuis(S.db.kuis.find(r => r.id === x.dataset.xls)); });
   $('#content').querySelector('tbody').addEventListener('click', async ev => {
     const tg = ev.target.closest('[data-toggle]'), dl = ev.target.closest('[data-del]'), ed = ev.target.closest('[data-edit]');
     try {
@@ -1025,18 +1039,21 @@ async function pgKuis() {
 }
 
 let qSeq = 0;
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 function kuisStat(r) {
   let q = []; try { q = JSON.parse(r.soal || '[]'); } catch (e) {}
   return { n: q.length, total: Math.round(q.reduce((t, x) => t + (Number(x.poin) || 0), 0) * 100) / 100 };
 }
 const kuisInfo = r => { const t = kuisStat(r); return t.n + ' soal • ' + t.total + ' poin'; };
 
+function kuisAuto(k) { try { return Number(JSON.parse(k.jawaban).auto) || 0; } catch (e) { return 0; } }
+
 function kuisJaw(it, k) {
   if (!k.jawaban) return '-';
   try {
-    const j = JSON.parse(k.jawaban), soal = JSON.parse(it.soal || '[]');
-    const ur = soal.map((s, i) => s.tipe === 'uraian' ? `<div><small>${esc(s.pertanyaan)}</small><br>${esc(j.a[i] || '-')}</div>` : '').join('');
-    return `<small>Skor otomatis: ${esc(j.auto)}${j.manual ? ' • uraian ' + esc(j.manual) + ' poin menunggu nilai guru' : ''}</small>${ur ? `<details><summary>Jawaban uraian</summary>${ur}</details>` : ''}`;
+    const j = JSON.parse(k.jawaban), soal = JSON.parse(it.soal || '[]'), m = j.m || {};
+    const ur = soal.map((s, i) => s.tipe === 'uraian' ? `<div class="uq"><small>${esc(s.pertanyaan)}</small><br>${esc(j.a[i] || '-')}<br><label class="inl">Nilai <input type="number" class="u-in" data-u="${esc(k.siswaId)}:${i}" data-old="${esc(m[i] == null ? '' : m[i])}" value="${esc(m[i] == null ? '' : m[i])}" min="0" max="${s.poin}" step="any"> / ${s.poin}</label></div>` : '').join('');
+    return `<small>Skor otomatis: ${esc(j.auto)}</small>${ur ? `<details><summary>Koreksi uraian</summary>${ur}</details>` : ''}`;
   } catch (e) { return '-'; }
 }
 
@@ -1119,7 +1136,7 @@ function kuisForm(item) {
       <label>Mata Pelajaran<select name="mapelId">${mp.map(m => `<option value="${esc(m.id)}"${item && item.mapelId === m.id ? ' selected' : ''}>${esc(m.nama)}</option>`).join('')}</select></label>
       <label>Kelas<input name="kelas" value="${esc(item ? item.kelas : '')}" placeholder="mis. X IPA 1"></label>
     </div>
-    <label>Batas akhir pengerjaan<input type="date" name="deadline" value="${esc(item ? item.deadline || '' : '')}"></label>
+    <label>Batas akhir pengerjaan <small>(setelah lewat, kuis otomatis menjadi draf)</small><input type="date" name="deadline" value="${esc(item ? item.deadline || '' : '')}"></label>
     <label>Petunjuk pengerjaan<textarea name="deskripsi" style="min-height:70px">${esc(item ? item.deskripsi : '')}</textarea></label>
     <div class="qadd" style="margin:0 0 4px"><button type="button" class="btn ghost sm" id="btnTplKuis">Unduh Template Excel</button><button type="button" class="btn ghost sm" id="btnImpKuis">Impor Soal dari Excel</button><input type="file" id="fImpKuis" accept=".xlsx,.xls,.csv" hidden></div>
     <div class="qtotal"><b id="qCount">0</b> soal • Total <b id="qTotal">0</b> poin</div>
@@ -1215,7 +1232,7 @@ function logoToPng(file) {
 }
 
 async function pgIdentitas() {
-  const st = S.pub.settings, logo = safeUrl(st.logoUrl);
+  const st = S.pub.settings, logo = safeUrl(st.logoUrl), hero = safeUrl(st.heroUrl);
   $('#content').innerHTML = `<div class="pg-head"><h2>Identitas Sekolah</h2></div>
     <div class="panel" style="max-width:680px;margin-bottom:16px">
       <h3 style="margin-top:0">Logo Sekolah</h3>
@@ -1231,6 +1248,13 @@ async function pgIdentitas() {
           ${logo ? `<label style="margin:12px 0 0">Link logo<input readonly id="logoLink" value="${esc(logo)}" onclick="this.select()"></label>` : ''}
         </div>
       </div>
+    </div>
+    <div class="panel" style="max-width:680px;margin-bottom:16px">
+      <h3 style="margin-top:0">Gambar Latar Banner</h3>
+      <div class="heroprev" id="heroPrev">${hero ? `<img src="${esc(hero)}" alt="Gambar latar">` : 'Belum ada gambar latar'}</div>
+      <input type="file" id="heroFile" accept="image/png,image/jpeg,image/webp">
+      <small class="meta">Disarankan gambar landscape (mis. 1920×1080). Gambar otomatis diperkecil (maks. 2000 px) dan disimpan di Google Drive. Banner diberi lapisan gelap agar teks tetap terbaca.</small>
+      <div class="btns"><button type="button" class="btn primary" id="btnHeroUp" disabled>Unggah Gambar</button><button type="button" class="btn ghost" id="btnHeroDel"${hero ? '' : ' disabled'}>Hapus Gambar</button></div>
     </div>
     <form class="panel" id="fId" style="max-width:680px">
       <label>Nama sekolah<input name="namaSekolah" value="${esc(st.namaSekolah)}" required></label>
@@ -1260,6 +1284,28 @@ async function pgIdentitas() {
   };
   $('#btnLogoDel').onclick = async () => {
     try { S.pub.settings = await call('removeLogo'); renderPublic(); toast('Logo dihapus.', 'ok'); pgIdentitas(); }
+    catch (err) { toast(err.message, 'err'); }
+  };
+
+  let heroData = null;
+  $('#heroFile').addEventListener('change', async ev => {
+    const f = ev.target.files[0];
+    heroData = null; $('#btnHeroUp').disabled = true;
+    if (!f) return;
+    try {
+      heroData = await imgB64(f, 2000, 0.8);
+      $('#heroPrev').innerHTML = `<img src="data:image/jpeg;base64,${heroData}" alt="Pratinjau">`;
+      $('#btnHeroUp').disabled = false;
+    } catch (err) { toast(err.message, 'err'); ev.target.value = ''; }
+  });
+  $('#btnHeroUp').onclick = async () => {
+    if (!heroData) return;
+    const b = $('#btnHeroUp'); b.disabled = true; b.textContent = 'Mengunggah...';
+    try { S.pub.settings = await call('uploadHero', { data: heroData }); renderPublic(); toast('Gambar latar diunggah.', 'ok'); pgIdentitas(); }
+    catch (err) { toast(err.message, 'err'); b.disabled = false; b.textContent = 'Unggah Gambar'; }
+  };
+  $('#btnHeroDel').onclick = async () => {
+    try { S.pub.settings = await call('removeHero'); renderPublic(); toast('Gambar latar dihapus.', 'ok'); pgIdentitas(); }
     catch (err) { toast(err.message, 'err'); }
   };
 
@@ -1303,6 +1349,37 @@ function dlNilai(jenis, items, fname) {
   XLSX.writeFile(wb, fname.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.xlsx');
 }
 
+function skorSoal(s, a, m) {
+  if (s.tipe === 'pg') return a !== undefined && a !== '' && Number(a) === s.kunci ? s.poin : 0;
+  if (s.tipe === 'jodoh') { const arr = Array.isArray(a) ? a : []; return Math.round(s.poin * s.pasangan.filter((p, j) => String(arr[j] || '').trim() === p[1]).length / s.pasangan.length * 100) / 100; }
+  return m === undefined ? '' : Number(m);
+}
+
+function dlNilaiTugas(it) {
+  if (!needXlsx()) return;
+  const rows = [['Tugas: ' + it.judul], ['Mapel: ' + mName(it.mapelId) + ' • Kelas: ' + (it.kelas || 'Semua') + ' • Batas pengumpulan: ' + (it.deadline || '-')], [],
+    ['No', 'Nama', 'Kelas', 'Status', 'Waktu', 'Jawaban / Tautan', 'Nilai']];
+  kumpulData('pemb', it).forEach((x, n) => rows.push([n + 1, x.s.nama, x.s.kelas, stLabel(x), x.k.waktu || '', String(x.k.jawaban || '').slice(0, 30000), x.k.nilai ? Number(x.k.nilai) : '']));
+  const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 17 }, { wch: 60 }, { wch: 8 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
+  XLSX.writeFile(wb, ('nilai-' + it.judul).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.xlsx');
+}
+
+function dlNilaiKuis(it) {
+  if (!needXlsx()) return;
+  let soal = []; try { soal = JSON.parse(it.soal || '[]'); } catch (e) {}
+  const rows = [['Kuis: ' + it.judul], ['Mapel: ' + mName(it.mapelId) + ' • Kelas: ' + (it.kelas || 'Semua') + ' • Total poin: ' + kuisStat(it).total], [],
+    ['No', 'Nama', 'Kelas', 'Status', 'Waktu'].concat(soal.map((s, i) => 'Soal ' + (i + 1) + ' (' + s.poin + ')'), ['Nilai Total'])];
+  kumpulData('kuis', it).forEach((x, n) => {
+    let j = {}; try { j = JSON.parse(x.k.jawaban || '{}'); } catch (e) {}
+    const per = soal.map((s, i) => x.sudah && j.a ? skorSoal(s, j.a[i], (j.m || {})[i]) : '');
+    rows.push([n + 1, x.s.nama, x.s.kelas, stLabel(x), x.k.waktu || ''].concat(per, [x.k.nilai ? Number(x.k.nilai) : '']));
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 17 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
+  XLSX.writeFile(wb, ('nilai-' + it.judul).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.xlsx');
+}
+
 function openKumpul(jenis, id) {
   const it = (jenis === 'kuis' ? S.db.kuis : S.db.pemb).find(x => x.id === id);
   if (!it) return;
@@ -1311,13 +1388,23 @@ function openKumpul(jenis, id) {
     <p class="meta">Kelas: ${esc(it.kelas || 'Semua')} • <b>${sudah}</b> sudah mengumpulkan • <b>${d.length - sudah}</b> belum • ${d.length} siswa</p>
     ${d.length ? '' : '<p class="err">Tidak ada siswa aktif pada kelas ini.</p>'}
     <div class="tblwrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Waktu</th><th>Jawaban</th><th>Nilai</th></tr></thead><tbody>
-    ${d.map(x => `<tr><td>${esc(x.s.nama)}</td><td>${esc(x.s.kelas)}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td><td class="pre">${pemb ? linkify(x.k.jawaban || '-') : kuisJaw(it, x.k)}</td><td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
+    ${d.map(x => `<tr data-auto="${pemb ? '' : kuisAuto(x.k)}"><td>${esc(x.s.nama)}</td><td>${esc(x.s.kelas)}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td><td class="pre">${pemb ? linkify(x.k.jawaban || '-') : kuisJaw(it, x.k)}</td><td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn ghost sm" id="kpXls">Unduh Excel</button></div>`,
     async (fd, form) => {
-      const list = $$('input[data-old]', form).filter(i => i.value.trim() !== i.dataset.old).map(i => ({ siswaId: i.name.slice(2), nilai: i.value.trim() }));
-      if (list.length) { await call('setNilai', { jenis, refId: id, list }); toast('Nilai tersimpan.', 'ok'); go(S.page); }
+      const ur = {};
+      $$('[data-u]', form).filter(i => i.value.trim() !== i.dataset.old).forEach(i => { const p = i.dataset.u.split(':'); (ur[p[0]] = ur[p[0]] || {})[p[1]] = i.value.trim(); });
+      const list = $$('input[name^="n_"]', form).filter(i => i.value.trim() !== i.dataset.old && !ur[i.name.slice(2)]).map(i => ({ siswaId: i.name.slice(2), nilai: i.value.trim() }));
+      const us = Object.keys(ur);
+      if (us.length) await call('skorUraian', { refId: id, list: us.map(sid => ({ siswaId: sid, skor: ur[sid] })) });
+      if (list.length) await call('setNilai', { jenis, refId: id, list });
+      if (us.length || list.length) { toast('Nilai tersimpan.', 'ok'); go(S.page); }
     }, { wide: true, submitLabel: 'Simpan Nilai', onOpen: form => {
-      $('#kpXls', form).onclick = () => dlNilai(jenis, [it], 'nilai-' + it.judul);
+      $('#kpXls', form).onclick = () => jenis === 'kuis' ? dlNilaiKuis(it) : dlNilaiTugas(it);
+      form.addEventListener('input', e => {
+        const u = e.target.closest('[data-u]'); if (!u) return;
+        const tr = u.closest('tr'), sum = $$('[data-u]', tr).reduce((t, i) => t + (Number(i.value) || 0), 0);
+        tr.querySelector('input[name^="n_"]').value = Math.round(((Number(tr.dataset.auto) || 0) + sum) * 100) / 100;
+      });
     } });
 }
 
