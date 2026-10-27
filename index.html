@@ -6,6 +6,17 @@
   <title>LMS SMP IT AL MUBAROK</title>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
+  <script>
+  /* Pengaman: jika ada error JavaScript, pesannya tampil di layar loading (bukan diam saja). */
+  window.addEventListener('error', function (e) {
+    var m = document.getElementById('splashMsg');
+    if (m) m.textContent = 'Terjadi kesalahan: ' + (e.message || 'tidak diketahui');
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var m = document.getElementById('splashMsg');
+    if (m) m.textContent = 'Terjadi kesalahan: ' + ((e.reason && e.reason.message) || e.reason);
+  });
+  </script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
 :root{
@@ -430,15 +441,24 @@ function toast(msg, type) {
 }
 
 // GANTI dengan URL Web App Apps Script Anda (berakhiran /exec)
-const API_URL = 'https://script.google.com/macros/s/AKfycbzFd-bvg5S489kWoIKM5IDBIZtIaHP08xgkRxuebiXKlItIzrO87V7krNmb1ra0tSLp4g/exec
-';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzFd-bvg5S489kWoIKM5IDBIZtIaHP08xgkRxuebiXKlItIzrO87V7krNmb1ra0tSLp4g/exec';
 
 function run(fn, ...args) {
+  if (API_URL.indexOf('GANTI_DENGAN') >= 0) {
+    return Promise.reject(new Error('API_URL di index.html belum diisi dengan URL Web App Apps Script (berakhiran /exec).'));
+  }
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 45000); // batas waktu 45 detik agar tidak menggantung selamanya
   // text/plain agar tidak memicu preflight CORS pada Apps Script
-  return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
+  return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }), signal: ctl.signal })
     .then(r => r.json())
     .then(j => { if (!j.ok) throw new Error(j.error || 'Terjadi kesalahan.'); return j.data; })
-    .catch(e => { throw new Error(e.message === 'Failed to fetch' ? 'Tidak dapat terhubung ke server. Periksa internet atau URL API.' : e.message); });
+    .catch(e => {
+      if (e.name === 'AbortError') throw new Error('Server terlalu lama merespons. Coba muat ulang halaman.');
+      if (e instanceof SyntaxError) throw new Error('Respons server bukan JSON. Periksa URL API dan pengaturan deploy (Who has access: Anyone).');
+      throw new Error(e.message === 'Failed to fetch' ? 'Tidak dapat terhubung ke server. Periksa internet atau URL API.' : e.message);
+    })
+    .finally(() => clearTimeout(timer));
 }
 
 async function call(action, data) {
@@ -508,12 +528,16 @@ async function loadPublic() {
     S.pub = await run('publicData');
     applyTheme(S.pub.settings);
     renderPublic(); S.pubLoaded = true;
-  } catch (e) { toast('Gagal memuat data: ' + e.message, 'err'); }
+  } catch (e) {
+    toast('Gagal memuat data: ' + e.message, 'err');
+    $('#pubPemb').innerHTML = '<div class="empty">Gagal memuat data: ' + esc(e.message) + '</div>';
+    $('#pubKuis').innerHTML = '';
+  }
 }
 
 function renderPublic() {
   const st = S.pub.settings;
-  document.title = 'LMS SMP IT Al Mubarok';
+  document.title = 'LMS SMP IT AL MUBAROK';
   $('#brandName').textContent = st.namaSekolah;
   $('#sideName').textContent = st.namaSekolah;
   setLogo($('#brandLogo'), st.logoUrl); setLogo($('#sideLogo'), st.logoUrl);
@@ -1680,7 +1704,10 @@ const Loader = {
     this.t0 = Date.now(); this.i = 0;
     this.el.hidden = false; requestAnimationFrame(() => this.el.classList.remove('hide'));
     this.say(first || this.MSGS[0]);
-    this.timer = setInterval(() => this.say(this.MSGS[this.i = (this.i + 1) % this.MSGS.length]), 1800);
+    this.timer = setInterval(() => {
+      if (Date.now() - this.t0 > 12000) this.say('Server lambat merespons, mohon tunggu sebentar...');
+      else this.say(this.MSGS[this.i = (this.i + 1) % this.MSGS.length]);
+    }, 1800);
   },
   hide(now) {
     const wait = now ? 0 : Math.max(0, 1000 - (Date.now() - this.t0));
@@ -1695,13 +1722,19 @@ const Loader = {
 /* ================== INIT ================== */
 (async function init() {
   Loader.show();
-  history.replaceState({ v: 'public' }, '');
-  const t = store.get();
-  if (t) {
-    S.token = t;
-    try { S.user = await call('me'); } catch (e) { S.token = null; store.set(null); }
+  try {
+    history.replaceState({ v: 'public' }, '');
+    const t = store.get();
+    if (t) {
+      S.token = t;
+      try { S.user = await call('me'); } catch (e) { S.token = null; store.set(null); }
+    }
+    S.token ? (await loadPublic(), await showApp()) : await showPublic();
+  } catch (e) {
+    toast('Gagal memulai aplikasi: ' + e.message, 'err');
+  } finally {
+    Loader.hide(); // selalu tutup layar loading, apa pun hasilnya
   }
-  try { S.token ? (await loadPublic(), await showApp()) : await showPublic(); } finally { Loader.hide(); }
 })();
 </script>
 </body>
