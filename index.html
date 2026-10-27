@@ -331,6 +331,18 @@ html{scroll-behavior:smooth}
   #btnLogin .ico{display:none}
   .brand{font-size:14px}
 }
+
+/* ===== Warna kartu mengikuti mata pelajaran ===== */
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.card.mp{--mh:215;--mc:hsl(var(--mh) 68% 42%);border-top:4px solid var(--mc);background:color-mix(in srgb,var(--mc) 6%,var(--card))}
+:root[data-theme="gelap"] .card.mp{--mc:hsl(var(--mh) 72% 66%);background:color-mix(in srgb,var(--mc) 9%,var(--card))}
+.card.mp.click:hover{border-color:var(--mc)}
+.card.mp .chip.m{background:var(--mc);color:#fff}
+:root[data-theme="gelap"] .card.mp .chip.m{color:#0f172a}
+.card.mp .chip:not(.m):not(.tipe){background:color-mix(in srgb,var(--mc) 14%,transparent);color:var(--mc)}
+.chip.tipe{background:transparent;border:1px solid var(--line);color:var(--text)}
+.card.mp .btn.primary{background:var(--mc);box-shadow:0 4px 12px -4px var(--mc)}
+:root[data-theme="gelap"] .card.mp .btn.primary{color:#0f172a}
 </style>
 </head>
 <body>
@@ -557,6 +569,29 @@ document.addEventListener('click', e => {
 /* ================== PUBLIK ================== */
 function mapelName(id) { const m = (S.pub.mapel || []).find(x => x.id === id); return m ? m.nama : 'Umum'; }
 
+/* ---------- Kelas seragam (7, 8, 9) ---------- */
+const KELAS = ['7', '8', '9'];
+/** "VII A", "7A", "Kelas 7", "7" -> "7"; jika tidak dikenali -> "". */
+function normKelas(v) {
+  const s = String(v == null ? '' : v).trim().toUpperCase().replace(/^KELAS\s*/, ''), m = s.match(/^(VIII|VII|IX|7|8|9)(?![0-9IVX])/);
+  return m ? ({ VII: '7', VIII: '8', IX: '9' }[m[1]] || m[1]) : '';
+}
+const kelasKey = v => normKelas(v) || String(v == null ? '' : v).trim().toLowerCase();
+const kelasLabel = v => normKelas(v) || String(v == null ? '' : v).trim();
+function kelasOpts(v, kosong) {
+  const cur = kelasLabel(v), list = KELAS.slice();
+  if (cur && list.indexOf(cur) < 0) list.push(cur);
+  return `<option value="">${esc(kosong)}</option>` + list.map(k => `<option value="${esc(k)}"${k === cur ? ' selected' : ''}>${KELAS.indexOf(k) < 0 ? esc(k) + ' (nilai lama)' : 'Kelas ' + k}</option>`).join('');
+}
+
+/* ---------- Jenis materi & warna mapel ---------- */
+const hasModul = r => !!(String(r.pembahasan || '').trim() || String(r.lampiran || '').trim());
+const hasTugas = r => !!String(r.tugas || '').trim();
+const tipeMateri = r => { const m = hasModul(r), t = hasTugas(r); return m && t ? 'Modul & Tugas' : m ? 'Modul' : t ? 'Tugas' : ''; };
+const cardPrev = r => { const t = String(r.pembahasan || '').trim() || String(r.tugas || '').trim(); return esc(t.slice(0, 110)) + (t.length > 110 ? '…' : ''); };
+/** Setiap mapel mendapat warna sendiri berdasarkan urutannya di Data Mata Pelajaran. */
+const mapelStyle = id => { const i = (S.pub.mapel || []).findIndex(m => m.id === id); return i < 0 ? '' : ' style="--mh:' + Math.round((210 + i * 137.508) % 360) + '"'; };
+
 async function loadPublic() {
   try {
     S.pub = await run('publicData');
@@ -597,15 +632,15 @@ function drawPublicLists() {
   const ok = r => (!m || r.mapelId === m) && (!q || (r.judul + ' ' + mapelName(r.mapelId) + ' ' + r.kelas + ' ' + r.guruNama).toLowerCase().includes(q));
   const pemb = S.pub.pembelajaran.filter(ok), kuis = S.pub.kuis.filter(ok);
   $('#pubPemb').innerHTML = pemb.length ? pemb.map(r => `
-    <div class="card click" data-open="${esc(r.id)}">
-      <div><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''}</div>
+    <div class="card mp click" data-open="${esc(r.id)}"${mapelStyle(r.mapelId)}>
+      <div class="chips"><span class="chip m">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">Kelas ${esc(kelasLabel(r.kelas))}</span>` : ''} ${tipeMateri(r) ? `<span class="chip tipe">${esc(tipeMateri(r))}</span>` : ''}</div>
       <h3>${esc(r.judul)}</h3>
-      <p class="grow">${esc((r.pembahasan || '').slice(0, 110))}${(r.pembahasan || '').length > 110 ? '…' : ''}</p>
+      <p class="grow">${cardPrev(r)}</p>
       <div class="meta">${esc(r.guruNama)} • ${esc((r.tanggal || '').slice(0, 10))}${r.deadline ? ' • Tugas s.d. ' + esc(r.deadline) : ''}</div>
     </div>`).join('') : '<div class="empty">Belum ada materi pembelajaran yang diterbitkan.</div>';
   $('#pubKuis').innerHTML = kuis.length ? kuis.map(r => `
-    <div class="card">
-      <div><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''}</div>
+    <div class="card mp"${mapelStyle(r.mapelId)}>
+      <div class="chips"><span class="chip m">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">Kelas ${esc(kelasLabel(r.kelas))}</span>` : ''}</div>
       <h3>${esc(r.judul)}</h3>
       <div class="meta grow">${esc(r.guruNama)} • ${esc((r.tanggal || '').slice(0, 10))}</div>
       <span class="chip">${r.jml || 0} soal • ${r.total || 0} poin</span>${r.deadline ? ` <span class="chip">s.d. ${esc(r.deadline)}</span>` : ''} <button class="btn primary" data-kuis="${esc(r.id)}">Kerjakan Kuis</button>
@@ -613,9 +648,9 @@ function drawPublicLists() {
 }
 
 function pickForm(title, kelas, intro, next) {
-  const all = S.pub.siswa || [], kl = (kelas || '').toLowerCase();
-  let l = all.filter(x => !kl || (x.kelas || '').toLowerCase() === kl); if (!l.length) l = all;
-  openForm(title, `<p class="meta">${esc(intro)}</p><label>Pilih nama Anda<select name="sid" required><option value="">-- pilih nama --</option>${l.map(x => `<option value="${esc(x.id)}"${x.id === S.siswaId ? ' selected' : ''}>${esc(x.nama)}${x.kelas ? ' (' + esc(x.kelas) + ')' : ''}</option>`).join('')}</select></label>`,
+  const all = S.pub.siswa || [], kl = kelasKey(kelas);
+  let l = all.filter(x => !kl || kelasKey(x.kelas) === kl); if (!l.length) l = all;
+  openForm(title, `<p class="meta">${esc(intro)}</p><label>Pilih nama Anda<select name="sid" required><option value="">-- pilih nama --</option>${l.map(x => `<option value="${esc(x.id)}"${x.id === S.siswaId ? ' selected' : ''}>${esc(x.nama)}${x.kelas ? ' (Kelas ' + esc(kelasLabel(x.kelas)) + ')' : ''}</option>`).join('')}</select></label>`,
     async fd => { S.siswaId = fd.get('sid'); await next(S.siswaId, l.find(x => x.id === S.siswaId)); }, { submitLabel: 'Lanjut' });
 }
 
@@ -641,18 +676,19 @@ function setupUpload(form, send) {
 }
 
 function showMateri(r, sid) {
+  const showT = hasTugas(r), showM = hasModul(r) || !showT, tp = tipeMateri(r);
   openForm(r.judul, `
-    <p class="meta"><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">${esc(r.kelas)}</span>` : ''} Oleh ${esc(r.guruNama)}</p>
-    <div class="tabs"><button type="button" class="tab on" data-tab="t1">Pembahasan</button><button type="button" class="tab" data-tab="t2">Tugas</button></div>
-    <div class="tabpane" id="t1"><div class="pre">${linkify(r.pembahasan) || '<i>Belum ada pembahasan.</i>'}</div>${mediaHtml(r.lampiran)}</div>
-    <div class="tabpane" id="t2" hidden><div class="pre">${r.deadline ? `<b>Batas pengumpulan: ${esc(r.deadline)}</b><br><br>` : ''}${linkify(r.tugas) || '<i>Tidak ada tugas.</i>'}</div>
+    <p class="meta"><span class="chip">${esc(mapelName(r.mapelId))}</span> ${r.kelas ? `<span class="chip">Kelas ${esc(kelasLabel(r.kelas))}</span>` : ''}${tp ? ` <span class="chip tipe">${esc(tp)}</span>` : ''} Oleh ${esc(r.guruNama)}</p>
+    ${showM && showT ? `<div class="tabs"><button type="button" class="tab on" data-tab="t1">Modul</button><button type="button" class="tab" data-tab="t2">Tugas</button></div>` : ''}
+    <div class="tabpane" id="t1"${showM ? '' : ' hidden'}><div class="pre">${linkify(r.pembahasan) || '<i>Belum ada pembahasan.</i>'}</div>${mediaHtml(r.lampiran)}</div>
+    ${showT ? `<div class="tabpane" id="t2"${showM ? ' hidden' : ''}><div class="pre">${r.deadline ? `<b>Batas pengumpulan: ${esc(r.deadline)}</b><br><br>` : ''}${linkify(r.tugas) || '<i>Tidak ada tugas.</i>'}</div>
       <label style="margin-top:16px">Jawaban tugas <small>(ketik langsung, tempel tautan, atau unggah file)</small><textarea name="jawaban" style="min-height:130px" placeholder="Ketik jawaban Anda di sini, atau tempel tautan Google Drive, lalu klik Kirim Tugas"></textarea></label>
-      <div class="lampbar"><button type="button" class="btn ghost sm" id="btnUpl">Unggah Gambar / PDF</button><input type="file" id="fUpl" accept="image/*,application/pdf" hidden><small id="uplInfo">Maks. sekitar 4,5 MB per file.</small></div></div>`,
+      <div class="lampbar"><button type="button" class="btn ghost sm" id="btnUpl">Unggah Gambar / PDF</button><input type="file" id="fUpl" accept="image/*,application/pdf" hidden><small id="uplInfo">Maks. sekitar 4,5 MB per file.</small></div></div>` : ''}`,
     async fd => {
       const x = await run('pubAction', 'tugas', r.id, sid, fd.get('jawaban'));
       if (!x.ok) throw new Error(x.error);
       toast('Tugas berhasil dikirim.', 'ok');
-    }, { wide: true, submitLabel: 'Kirim Tugas', onOpen: form => setupUpload(form, async data => {
+    }, { wide: true, noSubmit: !showT, submitLabel: 'Kirim Tugas', onOpen: form => showT && setupUpload(form, async data => {
       const x = await run('pubAction', 'upload', r.id, sid, data);
       if (!x.ok) throw new Error(x.error);
       return x.url;
@@ -835,7 +871,7 @@ async function pgDashboard() {
 const YATIDAK = [['ya', 'Aktif'], ['tidak', 'Nonaktif']];
 const ENT = {
   siswa: { title: 'Data Siswa', fields: [
-    { k: 'nama', l: 'Nama Lengkap', req: 1 }, { k: 'kelas', l: 'Kelas' },
+    { k: 'nama', l: 'Nama Lengkap', req: 1 }, { k: 'kelas', l: 'Kelas', t: 'kelas', req: 1 },
     { k: 'jk', l: 'Jenis Kelamin', t: 'select', o: [['L', 'Laki-laki'], ['P', 'Perempuan']] },
     { k: 'aktif', l: 'Status', t: 'select', o: YATIDAK, badge: 1 }] },
   guru: { title: 'Data Guru', fields: [
@@ -860,11 +896,13 @@ function fieldHtml(f, v) {
     return `<fieldset class="multi"><legend>${esc(f.l)}${f.hint ? ' <small>' + esc(f.hint) + '</small>' : ''}</legend>${all.map(n => `<label class="chk"><input type="checkbox" name="${f.k}" value="${esc(n)}"${sel.indexOf(n) >= 0 ? ' checked' : ''}> ${esc(n)}${names.indexOf(n) < 0 ? ' (tidak ada di data)' : ''}</label>`).join('') || '<small>Belum ada Data Mata Pelajaran.</small>'}</fieldset>`;
   }
   const req = f.req ? ' required' : '';
+  if (f.t === 'kelas') return `<label>${esc(f.l)}<select name="${f.k}"${req}>${kelasOpts(v, '-- pilih kelas --')}</select></label>`;
   if (f.t === 'select') return `<label>${esc(f.l)}${f.hint ? ' <small>' + esc(f.hint) + '</small>' : ''}<select name="${f.k}"${req}>${(f.src ? srcOpts(f.src, v) : f.o).map(o => `<option value="${esc(o[0])}"${o[0] === v ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
   if (f.t === 'password') return `<label>${esc(f.l)}${f.hint ? ' <small>' + esc(f.hint) + '</small>' : ''}<input type="password" name="${f.k}" autocomplete="new-password"${req}></label>`;
   return `<label>${esc(f.l)}<input type="${f.t || 'text'}" name="${f.k}" value="${esc(v)}"${req}></label>`;
 }
 function cell(f, v) {
+  if (f.t === 'kelas') return esc(kelasLabel(v));
   if (f.t === 'multi') return esc(String(v || '').split(';').map(x => x.trim()).filter(Boolean).join(', '));
   if (f.t === 'select' && !f.src) {
     const o = f.o.find(x => x[0] === v);
@@ -930,7 +968,7 @@ function downloadTemplateSiswa() {
       ['Petunjuk pengisian'],
       ['1. Isi data siswa mulai baris 2 pada sheet "Data Siswa". Jangan mengubah judul kolom.'],
       ['2. Nama wajib diisi.'],
-      ['3. Kelas diisi bebas, contoh: VII A.'],
+      ['3. Kelas wajib diisi 7, 8, atau 9 (boleh juga VII, VIII, atau IX).'],
       ['4. Jenis Kelamin diisi L (laki-laki) atau P (perempuan).'],
       ['5. Siswa dengan nama dan kelas yang sama dengan data yang sudah ada akan dilewati.'],
       ['6. Simpan file, lalu klik tombol Impor Siswa di aplikasi.']
@@ -957,12 +995,14 @@ function parseSiswaFile(file) {
         const iN = col('nama', 'nama lengkap', 'nama siswa'), iK = col('kelas'), iJ = col('jenis kelamin', 'jk', 'l/p');
         if (iN < 0) throw new Error('Kolom "Nama" tidak ditemukan. Gunakan template yang disediakan.');
         const cellOf = (r, i) => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '';
-        const out = [];
+        const out = [], bad = [];
         raw.slice(1).forEach((r, i) => {
-          const nama = cellOf(r, iN), kelas = cellOf(r, iK), jk = cellOf(r, iJ);
-          if (!nama && !kelas && !jk) return;
+          const nama = cellOf(r, iN), kelasRaw = cellOf(r, iK), jk = cellOf(r, iJ), kelas = normKelas(kelasRaw);
+          if (!nama && !kelasRaw && !jk) return;
+          if (!kelas) { bad.push('Baris ' + (i + 2) + ': kelas "' + kelasRaw + '" tidak valid'); return; }
           out.push({ baris: i + 2, nama, kelas, jk });
         });
+        if (bad.length) throw new Error(bad.slice(0, 3).join('; ') + (bad.length > 3 ? ' (+' + (bad.length - 3) + ' baris lain)' : '') + '. Isi kelas dengan 7, 8, atau 9.');
         if (!out.length) throw new Error('Tidak ada baris data pada file.');
         ok(out);
       } catch (err) { no(err); }
@@ -1032,7 +1072,7 @@ async function pgPemb() {
   const draw = () => {
     const q = $('#q').value.trim().toLowerCase();
     const list = S.rows.filter(r => !q || (r.judul + ' ' + mName(r.mapelId) + ' ' + r.kelas).toLowerCase().includes(q));
-    $('#tb').innerHTML = list.length ? list.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td>
+    $('#tb').innerHTML = list.length ? list.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(kelasLabel(r.kelas))}</td>
       ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${esc(r.deadline || '-')}</td><td>${badge(r.status)}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('pemb', r)} sudah</button></td>
       <td class="act"><button class="btn sm ghost" data-xls="${esc(r.id)}">Unduh Nilai</button><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
       <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
@@ -1090,14 +1130,14 @@ function pembForm(item) {
   if (!mp.length) { toast('Tambahkan data mata pelajaran terlebih dahulu.', 'err'); return; }
   const v = k => item ? item[k] || '' : '';
   openForm(item ? 'Edit Pembelajaran' : 'Pembelajaran Baru', `
-    <div class="tabs"><button type="button" class="tab on" data-tab="p1">Pembahasan</button><button type="button" class="tab" data-tab="p2">Tugas</button></div>
+    <div class="tabs"><button type="button" class="tab on" data-tab="p1">Modul</button><button type="button" class="tab" data-tab="p2">Tugas</button></div>
     <div class="tabpane" id="p1">
       <label>Judul<input name="judul" value="${esc(v('judul'))}" required></label>
       <div class="row">
         <label>Mata Pelajaran<select name="mapelId" required>${mp.map(m => `<option value="${esc(m.id)}"${m.id === v('mapelId') ? ' selected' : ''}>${esc(m.nama)}</option>`).join('')}</select></label>
-        <label>Kelas<input name="kelas" value="${esc(v('kelas'))}" placeholder="mis. X IPA 1"></label>
+        <label>Kelas<select name="kelas">${kelasOpts(v('kelas'), 'Semua kelas')}</select></label>
       </div>
-      <label>Pembahasan / materi <small>(tautan http(s) otomatis bisa diklik)</small><textarea name="pembahasan" style="min-height:200px">${esc(v('pembahasan'))}</textarea></label>
+      <label>Modul / pembahasan <small>(tautan http(s) otomatis bisa diklik)</small><textarea name="pembahasan" style="min-height:200px">${esc(v('pembahasan'))}</textarea></label>
       <label>Lampiran <small>(satu tautan per baris: gambar, PDF, video YouTube / Google Drive)</small><textarea name="lampiran" style="min-height:90px" placeholder="https://youtu.be/xxxxxxxxxxx&#10;https://drive.google.com/file/d/ID/view">${esc(v('lampiran'))}</textarea></label>
       <div class="lampbar"><button type="button" class="btn ghost sm" id="btnUpl">Unggah Gambar / PDF</button><input type="file" id="fUpl" accept="image/*,application/pdf" hidden><small id="uplInfo">Video: tempel tautan YouTube atau Google Drive (atur berbagi ke "Siapa saja yang memiliki link").</small></div>
     </div>
@@ -1139,7 +1179,7 @@ async function pgKuis() {
     <div class="pg-head"><h2>Kuis Online</h2><button class="btn primary" id="btnAdd">+ Kuis Baru</button></div>
     <p class="meta">Pilihan ganda dan menjodohkan dinilai otomatis; soal uraian dikoreksi guru per soal di detail pengumpulan, lalu nilai total otomatis dijumlahkan.</p>
     <div class="tblwrap"><table><thead><tr><th>Judul</th><th>Mapel</th><th>Kelas</th><th>Soal / Poin</th><th>Batas Akhir</th>${admin ? '<th>Guru</th>' : ''}<th>Status</th><th>Dibuat</th><th>Pengumpulan</th><th>Aksi</th></tr></thead>
-    <tbody>${rows.length ? rows.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(r.kelas)}</td><td>${kuisInfo(r)}</td><td>${esc(r.deadline || '-')}</td>
+    <tbody>${rows.length ? rows.map(r => `<tr><td><b>${esc(r.judul)}</b></td><td>${esc(mName(r.mapelId))}</td><td>${esc(kelasLabel(r.kelas))}</td><td>${kuisInfo(r)}</td><td>${esc(r.deadline || '-')}</td>
       ${admin ? `<td>${esc(r.guruNama)}</td>` : ''}<td>${badge(r.status)}${r.status === 'draf' && r.deadline && r.deadline < todayStr() ? '<br><small class="meta">batas akhir lewat</small>' : ''}</td><td>${esc((r.tanggal || '').slice(0, 10))}</td><td><button class="btn sm ghost" data-kumpul="${esc(r.id)}">${kumpulCount('kuis', r)} sudah</button></td>
       <td class="act"><button class="btn sm ghost" data-xls="${esc(r.id)}">Unduh Nilai</button><button class="btn sm ghost" data-edit="${esc(r.id)}">Edit</button>
       <button class="btn sm ghost" data-toggle="${esc(r.id)}">${r.status === 'terbit' ? 'Tarik' : 'Terbitkan'}</button>
@@ -1256,7 +1296,7 @@ function kuisForm(item) {
     <label>Judul kuis<input name="judul" value="${esc(item ? item.judul : '')}" required></label>
     <div class="row">
       <label>Mata Pelajaran<select name="mapelId">${mp.map(m => `<option value="${esc(m.id)}"${item && item.mapelId === m.id ? ' selected' : ''}>${esc(m.nama)}</option>`).join('')}</select></label>
-      <label>Kelas<input name="kelas" value="${esc(item ? item.kelas : '')}" placeholder="mis. X IPA 1"></label>
+      <label>Kelas<select name="kelas">${kelasOpts(item ? item.kelas : '', 'Semua kelas')}</select></label>
     </div>
     <label>Batas akhir pengerjaan <small>(setelah lewat, kuis otomatis menjadi draf)</small><input type="date" name="deadline" value="${esc(item ? item.deadline || '' : '')}"></label>
     <label>Petunjuk pengerjaan<textarea name="deskripsi" style="min-height:70px">${esc(item ? item.deskripsi : '')}</textarea></label>
@@ -1448,6 +1488,7 @@ LMS adalah tempat kamu membuka materi, mengumpulkan tugas, dan mengerjakan kuis 
 1. Klik tanda panah di bagian bawah banner (atau geser layar) untuk melihat daftar **Pembelajaran** dan **Kuis Online**.
 2. Gunakan kolom pencarian untuk mencari materi atau kuis.
 3. Tombol bulan/matahari di kanan atas mengganti tema gelap atau terang.
+4. Setiap kartu berwarna sesuai mata pelajarannya. Label **Modul**, **Tugas**, atau **Modul & Tugas** menunjukkan isi materi tersebut.
 ## Membuka materi dan mengumpulkan tugas
 1. Klik kartu materi, pilih **namamu**, lalu klik **Lanjut**.
 2. Tab **Pembahasan** berisi penjelasan guru, termasuk gambar, PDF, dan video yang bisa langsung diputar. Jika ada yang tidak tampil, klik **Buka di tab baru**.
@@ -1485,7 +1526,7 @@ Guru dan admin masuk lewat tombol **Login** di halaman utama. Guru mengelola mat
 | Keluar | Mengakhiri sesi |
 ## Materi pembelajaran dan tugas
 1. Buka **Materi Pembelajaran**, lalu klik **+ Pembelajaran Baru**.
-2. Tab **Pembahasan**: isi judul, mata pelajaran, kelas (kosongkan untuk semua kelas), pembahasan, dan lampiran.
+2. Tab **Pembahasan**: isi judul, mata pelajaran, kelas (pilih 7, 8, atau 9; pilih Semua kelas jika untuk semua), modul/pembahasan, dan lampiran. Materi diberi label Modul, Tugas, atau Modul & Tugas otomatis sesuai bagian yang Anda isi.
 3. Tab **Tugas**: isi instruksi, batas pengumpulan (opsional), dan status **Draf** atau **Terbit**.
 4. Klik **Simpan**. Gunakan **Terbitkan** atau **Tarik** di daftar untuk menampilkan atau menyembunyikan materi dari siswa.
 ### Lampiran
@@ -1517,7 +1558,7 @@ const GUIDE_ADMIN = `
 1. Isi data awal berurutan: **Data Mata Pelajaran**, **Data Guru** (pilih satu atau lebih mapel), **User** (nama dipilih dari Data Guru; tentukan role dan password), lalu **Data Siswa**.
 2. Data Siswa bisa diisi satu per satu atau lewat **Unduh Template Excel** dan **Impor Siswa** (kolom Nama, Kelas, Jenis Kelamin L atau P).
 3. **Identitas Sekolah**: isi nama sekolah, unggah logo, dan atur **Gambar Latar Banner** halaman depan.
-- Tulis kelas dengan konsisten, karena daftar nama siswa disaring berdasarkan kelas materi atau kuis. Siswa yang tidak aktif tidak muncul di pilihan nama.
+- Kelas dipilih dari daftar 7, 8, dan 9 agar seragam, karena daftar nama siswa disaring berdasarkan kelas materi atau kuis. Pada impor Excel, kolom Kelas wajib berisi 7, 8, atau 9. Siswa yang tidak aktif tidak muncul di pilihan nama.
 - Mengganti nama mapel atau guru otomatis memperbarui data yang terhubung. Mapel yang dipakai guru dan guru yang punya akun user tidak bisa dihapus.
 `;
 
@@ -1577,9 +1618,9 @@ document.addEventListener('click', e => {
 
 /* ================== PENGUMPULAN & NILAI ================== */
 function kumpulData(jenis, it) {
-  const kl = (it.kelas || '').toLowerCase(), km = {};
+  const kl = kelasKey(it.kelas), km = {};
   S.db.kumpul.filter(k => k.jenis === jenis && k.refId === it.id).forEach(k => km[k.siswaId] = k);
-  return S.db.siswa.filter(x => x.aktif !== 'tidak' && (!kl || (x.kelas || '').toLowerCase() === kl)).map(x => {
+  return S.db.siswa.filter(x => x.aktif !== 'tidak' && (!kl || kelasKey(x.kelas) === kl)).map(x => {
     const k = km[x.id] || {};
     return { s: x, k, sudah: k.status === 'kumpul', late: !!(it.deadline && k.waktu && k.waktu.slice(0, 10) > it.deadline) };
   });
@@ -1590,7 +1631,7 @@ const stLabel = x => x.sudah ? (x.late ? 'Terlambat' : 'Sudah') : 'Belum';
 function dlNilai(jenis, items, fname) {
   if (!needXlsx()) return;
   const rows = [['Judul', 'Mapel', 'Nama', 'Kelas', 'Status', 'Waktu', 'Nilai']];
-  items.forEach(it => kumpulData(jenis, it).forEach(x => rows.push([it.judul, mName(it.mapelId), x.s.nama, x.s.kelas, stLabel(x), x.k.waktu || '', x.k.nilai ? Number(x.k.nilai) : ''])));
+  items.forEach(it => kumpulData(jenis, it).forEach(x => rows.push([it.judul, mName(it.mapelId), x.s.nama, kelasLabel(x.s.kelas), stLabel(x), x.k.waktu || '', x.k.nilai ? Number(x.k.nilai) : ''])));
   const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 17 }, { wch: 8 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
   XLSX.writeFile(wb, fname.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.xlsx');
@@ -1604,9 +1645,9 @@ function skorSoal(s, a, m) {
 
 function dlNilaiTugas(it) {
   if (!needXlsx()) return;
-  const rows = [['Tugas: ' + it.judul], ['Mapel: ' + mName(it.mapelId) + ' • Kelas: ' + (it.kelas || 'Semua') + ' • Batas pengumpulan: ' + (it.deadline || '-')], [],
+  const rows = [['Tugas: ' + it.judul], ['Mapel: ' + mName(it.mapelId) + ' • Kelas: ' + (it.kelas ? kelasLabel(it.kelas) : 'Semua') + ' • Batas pengumpulan: ' + (it.deadline || '-')], [],
     ['No', 'Nama', 'Kelas', 'Status', 'Waktu', 'Jawaban / Tautan', 'Nilai']];
-  kumpulData('pemb', it).forEach((x, n) => rows.push([n + 1, x.s.nama, x.s.kelas, stLabel(x), x.k.waktu || '', String(x.k.jawaban || '').slice(0, 30000), x.k.nilai ? Number(x.k.nilai) : '']));
+  kumpulData('pemb', it).forEach((x, n) => rows.push([n + 1, x.s.nama, kelasLabel(x.s.kelas), stLabel(x), x.k.waktu || '', String(x.k.jawaban || '').slice(0, 30000), x.k.nilai ? Number(x.k.nilai) : '']));
   const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 17 }, { wch: 60 }, { wch: 8 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
   XLSX.writeFile(wb, ('nilai-' + it.judul).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') + '.xlsx');
@@ -1615,12 +1656,12 @@ function dlNilaiTugas(it) {
 function dlNilaiKuis(it) {
   if (!needXlsx()) return;
   let soal = []; try { soal = JSON.parse(it.soal || '[]'); } catch (e) {}
-  const rows = [['Kuis: ' + it.judul], ['Mapel: ' + mName(it.mapelId) + ' • Kelas: ' + (it.kelas || 'Semua') + ' • Total poin: ' + kuisStat(it).total], [],
+  const rows = [['Kuis: ' + it.judul], ['Mapel: ' + mName(it.mapelId) + ' • Kelas: ' + (it.kelas ? kelasLabel(it.kelas) : 'Semua') + ' • Total poin: ' + kuisStat(it).total], [],
     ['No', 'Nama', 'Kelas', 'Status', 'Waktu'].concat(soal.map((s, i) => 'Soal ' + (i + 1) + ' (' + s.poin + ')'), ['Nilai Total'])];
   kumpulData('kuis', it).forEach((x, n) => {
     let j = {}; try { j = JSON.parse(x.k.jawaban || '{}'); } catch (e) {}
     const per = soal.map((s, i) => x.sudah && j.a ? skorSoal(s, j.a[i], (j.m || {})[i]) : '');
-    rows.push([n + 1, x.s.nama, x.s.kelas, stLabel(x), x.k.waktu || ''].concat(per, [x.k.nilai ? Number(x.k.nilai) : '']));
+    rows.push([n + 1, x.s.nama, kelasLabel(x.s.kelas), stLabel(x), x.k.waktu || ''].concat(per, [x.k.nilai ? Number(x.k.nilai) : '']));
   });
   const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 17 }];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
@@ -1632,10 +1673,10 @@ function openKumpul(jenis, id) {
   if (!it) return;
   const d = kumpulData(jenis, it), sudah = d.filter(x => x.sudah).length, pemb = jenis === 'pemb';
   openForm('Pengumpulan: ' + it.judul, `
-    <p class="meta">Kelas: ${esc(it.kelas || 'Semua')} • <b>${sudah}</b> sudah mengumpulkan • <b>${d.length - sudah}</b> belum • ${d.length} siswa</p>
+    <p class="meta">Kelas: ${esc(it.kelas ? kelasLabel(it.kelas) : 'Semua')} • <b>${sudah}</b> sudah mengumpulkan • <b>${d.length - sudah}</b> belum • ${d.length} siswa</p>
     ${d.length ? '' : '<p class="err">Tidak ada siswa aktif pada kelas ini.</p>'}
     <div class="tblwrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Status</th><th>Waktu</th><th>Jawaban</th><th>Nilai</th></tr></thead><tbody>
-    ${d.map(x => `<tr data-auto="${pemb ? '' : kuisAuto(x.k)}"><td>${esc(x.s.nama)}</td><td>${esc(x.s.kelas)}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td><td class="pre">${pemb ? linkify(x.k.jawaban || '-') : kuisJaw(it, x.k)}</td><td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
+    ${d.map(x => `<tr data-auto="${pemb ? '' : kuisAuto(x.k)}"><td>${esc(x.s.nama)}</td><td>${esc(kelasLabel(x.s.kelas))}</td><td><span class="badge ${x.sudah ? 'ya' : 'tidak'}">${stLabel(x)}</span></td><td>${esc(x.k.waktu || '-')}</td><td class="pre">${pemb ? linkify(x.k.jawaban || '-') : kuisJaw(it, x.k)}</td><td><input name="n_${esc(x.s.id)}" value="${esc(x.k.nilai || '')}" data-old="${esc(x.k.nilai || '')}" inputmode="decimal" style="width:76px"></td></tr>`).join('')}</tbody></table></div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn ghost sm" id="kpXls">Unduh Excel</button></div>`,
     async (fd, form) => {
       const ur = {};
