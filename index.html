@@ -6,7 +6,7 @@
   <title>LMS SMP IT AL MUBAROK</title>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
 :root{
   --primary:#2563eb; --primary-soft:color-mix(in srgb,var(--primary) 12%,transparent);
@@ -252,15 +252,69 @@ html{scroll-behavior:smooth}
 @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
 .heroprev{height:150px;border-radius:12px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:10px;color:var(--muted)}
 .heroprev img{width:100%;height:100%;object-fit:cover}
+.guide{line-height:1.65;max-width:900px}
+.guide h3{margin:24px 0 8px;font-size:19px}
+.guide h4{margin:18px 0 6px;font-size:15px}
+.guide ol,.guide ul{padding-left:22px;margin:8px 0}
+.guide li{margin:4px 0}
+.guide p{margin:8px 0}
+.guide .tblwrap{margin:12px 0}
+.splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+.splash.hide{opacity:0;pointer-events:none}
+.splash[hidden]{display:none}
+.sp-scene{position:relative;width:230px;height:160px}
+.sp-book{position:absolute;left:25px;top:30px;width:180px;filter:drop-shadow(0 10px 14px rgba(15,23,42,.2))}
+.sp-book .cover{fill:var(--primary)}
+.sp-book .pg,.sp-book .pgf{fill:var(--card);stroke:var(--line);stroke-width:1.5;stroke-linejoin:round}
+.sp-book .ln{stroke:var(--line);stroke-width:2.2;stroke-linecap:round;fill:none}
+.sp-book .spine{stroke:var(--primary);stroke-width:2.5;stroke-linecap:round}
+.sp-book .flip{transform-box:view-box;transform-origin:60px 45px;animation:spflip 2.1s ease-in-out infinite}
+.sp-book .flip.f2{animation-delay:.35s}.sp-book .flip.f3{animation-delay:.7s}
+@keyframes spflip{0%{transform:scaleX(1);opacity:1}60%{transform:scaleX(-1);opacity:1}100%{transform:scaleX(-1);opacity:0}}
+.sp-float{position:absolute;bottom:92px;font-weight:800;font-size:22px;color:var(--primary);opacity:0;animation:spfloat 3s ease-in infinite}
+.sp-float.f1{left:55px}.sp-float.f2{left:95px;animation-delay:.6s}.sp-float.f3{left:130px;animation-delay:1.2s}.sp-float.f4{left:165px;animation-delay:1.8s}.sp-float.f5{left:112px;animation-delay:2.4s}
+@keyframes spfloat{0%{transform:translateY(0) scale(.6) rotate(-10deg);opacity:0}20%{opacity:1}100%{transform:translateY(-62px) scale(1.1) rotate(12deg);opacity:0}}
+.sp-pencil{position:absolute;right:-2px;bottom:-2px;width:58px;transform-origin:bottom left;animation:spwrite 1.2s ease-in-out infinite}
+@keyframes spwrite{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-16px,-5px) rotate(-9deg)}}
+.sp-msg{min-height:24px;padding:0 24px;text-align:center;font-size:16px;font-weight:700}
+.sp-dots span{display:inline-block;width:9px;height:9px;margin:0 4px;border-radius:50%;background:var(--primary);animation:spdot 1s ease-in-out infinite}
+.sp-dots span:nth-child(2){animation-delay:.15s}.sp-dots span:nth-child(3){animation-delay:.3s}
+@keyframes spdot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-8px);opacity:1}}
+.sp-sub{color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.splash *{animation-duration:.01s!important;animation-iteration-count:1!important}}
+.pw{position:relative;display:block}
+.pw input{padding-right:46px}
+.pw .eye{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pw .eye:hover{color:var(--primary);background:var(--primary-soft)}
 </style>
 </head>
 <body>
+<div class="splash" id="splash" role="status" aria-live="polite">
+  <div class="sp-scene">
+    <span class="sp-float f1">A</span><span class="sp-float f2">+</span><span class="sp-float f3">?</span><span class="sp-float f4">&#960;</span><span class="sp-float f5">&#9733;</span>
+    <svg class="sp-book" viewBox="0 0 120 92" aria-hidden="true">
+      <path class="cover" d="M60 24C45 14 16 14 2 20V82C16 76 45 76 60 86C75 76 104 76 118 82V20C104 14 75 14 60 24Z"/>
+      <path class="pg" d="M60 20C46 10 20 10 8 15V75C20 70 46 70 60 80Z"/>
+      <path class="pg" d="M60 20C74 10 100 10 112 15V75C100 70 74 70 60 80Z"/>
+      <path class="ln" d="M18 28C28 26 40 27 52 31M18 38C28 36 40 37 52 41M18 48C28 46 40 47 52 51"/>
+      <g class="flip f1"><path class="pgf" d="M60 20C74 10 100 10 112 15V75C100 70 74 70 60 80Z"/><path class="ln" d="M70 31C82 27 94 26 104 28M70 41C82 37 94 36 104 38"/></g>
+      <g class="flip f2"><path class="pgf" d="M60 20C74 10 100 10 112 15V75C100 70 74 70 60 80Z"/><path class="ln" d="M70 31C82 27 94 26 104 28M70 41C82 37 94 36 104 38"/></g>
+      <g class="flip f3"><path class="pgf" d="M60 20C74 10 100 10 112 15V75C100 70 74 70 60 80Z"/><path class="ln" d="M70 31C82 27 94 26 104 28M70 41C82 37 94 36 104 38"/></g>
+      <path class="spine" d="M60 20V80"/>
+    </svg>
+    <svg class="sp-pencil" viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(45 20 20)"><rect x="16" y="6" width="8" height="24" rx="1.5" fill="#f59e0b"/><path d="M16 30h8l-4 8z" fill="#fde68a"/><path d="M18.5 35l1.5 3 1.5-3z" fill="#334155"/><rect x="16" y="2" width="8" height="6" rx="2" fill="#f87171"/></g></svg>
+  </div>
+  <div class="sp-msg" id="splashMsg">Membuka buku pelajaran...</div>
+  <div class="sp-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+  <small class="sp-sub">Learning Management System</small>
+</div>
 
 <!-- ============ HALAMAN PUBLIK ============ -->
 <div id="publicView">
   <header class="topnav">
     <div class="brand"><img id="brandLogo" alt="" hidden><span id="brandName">LMS</span></div>
     <div class="navact">
+      <button class="btn ghost" id="btnPanduan">Panduan</button>
       <button class="btn ghost themebtn" data-theme-toggle aria-label="Ganti tema" title="Tema gelap / terang"></button>
       <button class="btn primary" id="btnLogin">Login</button>
     </div>
@@ -347,6 +401,7 @@ const themeStore = {
   get() { try { return localStorage.getItem('lms_theme'); } catch (e) { return null; } },
   set(v) { try { localStorage.setItem('lms_theme', v); } catch (e) {} }
 };
+try { if (themeStore.get() === 'gelap') document.documentElement.setAttribute('data-theme', 'gelap'); } catch (e) {}
 const ICONS = {
   dashboard: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
   siswa: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>',
@@ -361,7 +416,8 @@ const ICONS = {
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
   login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>'
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
+  book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
 };
 const ic = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 
@@ -374,7 +430,8 @@ function toast(msg, type) {
 }
 
 // GANTI dengan URL Web App Apps Script Anda (berakhiran /exec)
-const API_URL = 'https://script.google.com/macros/s/AKfycbzFd-bvg5S489kWoIKM5IDBIZtIaHP08xgkRxuebiXKlItIzrO87V7krNmb1ra0tSLp4g/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzFd-bvg5S489kWoIKM5IDBIZtIaHP08xgkRxuebiXKlItIzrO87V7krNmb1ra0tSLp4g/exec
+';
 
 function run(fn, ...args) {
   // text/plain agar tidak memicu preflight CORS pada Apps Script
@@ -450,13 +507,13 @@ async function loadPublic() {
   try {
     S.pub = await run('publicData');
     applyTheme(S.pub.settings);
-    renderPublic();
+    renderPublic(); S.pubLoaded = true;
   } catch (e) { toast('Gagal memuat data: ' + e.message, 'err'); }
 }
 
 function renderPublic() {
   const st = S.pub.settings;
-  document.title = 'LMS SMP IT AL MUBAROK';
+  document.title = 'LMS SMP IT Al Mubarok';
   $('#brandName').textContent = st.namaSekolah;
   $('#sideName').textContent = st.namaSekolah;
   setLogo($('#brandLogo'), st.logoUrl); setLogo($('#sideLogo'), st.logoUrl);
@@ -597,18 +654,20 @@ $('#btnLogin').onclick = () => {
 };
 $('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const f = e.target, btn = $('#loginSubmit');
-  btn.disabled = true; btn.textContent = 'Memproses...';
+  const u = e.target.username.value, p = e.target.password.value;
+  loginDlg.close(); Loader.show('Memeriksa akun Anda...');
   try {
-    const r = await run('login', f.username.value, f.password.value);
-    if (!r.ok) { $('#loginErr').textContent = r.error; $('#loginErr').hidden = false; return; }
+    const r = await run('login', u, p);
+    if (!r.ok) throw new Error(r.error);
     S.token = r.data.token; S.user = r.data.user; store.set(S.token);
-    loginDlg.close();
-    showApp();
+    Loader.say('Menyiapkan ruang kelas...');
+    await showApp();
+    Loader.hide();
     if (r.data.defaultPass) toast('Anda masih memakai password bawaan. Segera ganti password!', 'err');
   } catch (err) {
-    $('#loginErr').textContent = err.message; $('#loginErr').hidden = false;
-  } finally { btn.disabled = false; btn.textContent = 'Masuk'; }
+    Loader.hide(true);
+    $('#loginErr').textContent = err.message; $('#loginErr').hidden = false; loginDlg.showModal();
+  }
 });
 
 $('#btnLogout').onclick = async () => {
@@ -630,10 +689,12 @@ $('#btnPass').onclick = () => {
     });
 };
 
-function showPublic() {
+function showPublic(fromPop) {
+  if (!fromPop) Nav.view({ v: 'public' });
   $('#appView').hidden = true; $('#publicView').hidden = false;
   $('#btnLogin').innerHTML = ic('login') + (S.token ? 'Masuk ke Panel' : 'Login');
-  loadPublic();
+  if (fromPop && S.pubLoaded) { renderPublic(); return Promise.resolve(); }
+  return loadPublic();
 }
 
 async function showApp() {
@@ -654,6 +715,7 @@ function navItems() {
     { g: 'Pembelajaran' }, { id: 'pembelajaran', l: 'Materi Pembelajaran', i: 'pembelajaran' }, { id: 'kuis', l: 'Kuis Online', i: 'kuis' }
   ];
   if (admin) n.push({ g: 'Setting' }, { id: 'identitas', l: 'Identitas Sekolah', i: 'identitas' }, { id: 'users', l: 'User', i: 'users' });
+  n.push({ g: 'Bantuan' }, { id: 'panduan', l: 'Panduan', i: 'book' });
   return n;
 }
 
@@ -669,10 +731,12 @@ const PAGES = {
   dashboard: () => pgDashboard(),
   siswa: () => pgEntity('siswa'), guru: () => pgEntity('guru'), mapel: () => pgEntity('mapel'), users: () => pgEntity('users'),
   pembelajaran: () => pgPemb(), kuis: () => pgKuis(),
-  identitas: () => pgIdentitas()
+  identitas: () => pgIdentitas(),
+  panduan: () => pgPanduan()
 };
 
-async function go(page) {
+async function go(page, fromPop) {
+  if (!fromPop) Nav.view({ v: 'app', p: page });
   S.page = page;
   $$('#sideNav a').forEach(a => a.classList.toggle('on', a.dataset.page === page));
   $('#content').innerHTML = '<div class="loading">Memuat...</div>';
@@ -1318,9 +1382,134 @@ async function pgIdentitas() {
   });
 }
 
+/* ================== PANDUAN ================== */
+const GUIDE_SISWA = `
+## Pengantar
+LMS adalah tempat kamu membuka materi, mengumpulkan tugas, dan mengerjakan kuis online dari guru. **Kamu tidak perlu login.** Cukup pilih namamu sendiri dari daftar saat membuka materi atau kuis.
+## Halaman utama
+1. Klik tanda panah di bagian bawah banner (atau geser layar) untuk melihat daftar **Pembelajaran** dan **Kuis Online**.
+2. Gunakan kolom pencarian untuk mencari materi atau kuis.
+3. Tombol bulan/matahari di kanan atas mengganti tema gelap atau terang.
+## Membuka materi dan mengumpulkan tugas
+1. Klik kartu materi, pilih **namamu**, lalu klik **Lanjut**.
+2. Tab **Pembahasan** berisi penjelasan guru, termasuk gambar, PDF, dan video yang bisa langsung diputar. Jika ada yang tidak tampil, klik **Buka di tab baru**.
+3. Tab **Tugas** berisi instruksi dan batas pengumpulan. Tulis jawabanmu dengan salah satu cara: ketik langsung, tempel tautan (misalnya Google Drive), atau klik **Unggah Gambar / PDF**.
+4. Klik **Kirim Tugas**.
+- Ukuran file maksimal sekitar 4,5 MB dan satu materi dibatasi 5 file. Untuk file besar, gunakan tautan Google Drive.
+- Kamu boleh mengirim ulang selama guru belum memberi nilai. Setelah dinilai, jawaban tidak bisa diubah.
+- Tugas yang dikirim setelah batas pengumpulan ditandai **Terlambat**.
+## Mengerjakan kuis
+1. Klik **Kerjakan Kuis**, pilih namamu, lalu klik **Lanjut**.
+2. Baca petunjuk. Di atas terlihat jumlah soal dan total poin, dan tiap soal menampilkan poinnya.
+3. Jenis soal: **pilihan ganda** (pilih satu opsi), **menjodohkan** (pilih pasangan yang tepat pada tiap item), dan **uraian** (ketik jawaban, dinilai guru).
+4. Klik **Kirim Jawaban** lalu konfirmasi. Skormu langsung tampil.
+- Kuis hanya bisa dikerjakan satu kali dan jawaban tidak bisa diubah. Jika kamu membuka kuis yang sama lagi, yang tampil adalah skormu.
+- Jika ada soal uraian, skor akhir bisa bertambah setelah guru memeriksanya.
+- Kuis otomatis hilang dari halaman utama setelah batas akhirnya lewat.
+- Jangan menutup halaman sebelum skor tampil, dan pastikan sinyal stabil.
+## Masalah yang sering terjadi
+| Masalah | Yang perlu dilakukan |
+|---|---|
+| Namaku tidak ada di daftar | Datamu mungkin belum dimasukkan atau kelasnya berbeda. Hubungi gurumu. |
+| Materi atau kuis belum muncul | Mungkin belum diterbitkan atau batas akhir kuis sudah lewat. Tanyakan ke guru. |
+| Video atau PDF tidak tampil | Klik Buka di tab baru, atau minta guru mengatur berbagi filenya. |
+| Muncul pesan tidak dapat terhubung ke server | Periksa internet lalu coba lagi. |
+`;
+
+const GUIDE_GURU = `
+## Pengantar
+Guru dan admin masuk lewat tombol **Login** di halaman utama. Guru mengelola materi dan kuis miliknya sendiri, sedangkan admin mengelola semuanya serta data master dan pengaturan. Di HP, menu berada di bar bawah layar.
+| Tombol di bagian atas panel | Fungsi |
+|---|---|
+| Bulan/matahari | Ganti tema gelap atau terang |
+| Ganti Password | Ubah password Anda |
+| Halaman Utama | Lihat tampilan yang dilihat siswa |
+| Keluar | Mengakhiri sesi |
+## Materi pembelajaran dan tugas
+1. Buka **Materi Pembelajaran**, lalu klik **+ Pembelajaran Baru**.
+2. Tab **Pembahasan**: isi judul, mata pelajaran, kelas (kosongkan untuk semua kelas), pembahasan, dan lampiran.
+3. Tab **Tugas**: isi instruksi, batas pengumpulan (opsional), dan status **Draf** atau **Terbit**.
+4. Klik **Simpan**. Gunakan **Terbitkan** atau **Tarik** di daftar untuk menampilkan atau menyembunyikan materi dari siswa.
+### Lampiran
+Tempel satu tautan per baris: video YouTube (tampil siap putar), file Google Drive (video, PDF, gambar; atur berbagi ke "Siapa saja yang memiliki link"), atau unggah gambar dan PDF dari komputer lewat tombol **Unggah Gambar / PDF** (maks. sekitar 4,5 MB). Video besar sebaiknya lewat YouTube atau Drive.
+### Pengumpulan dan nilai tugas
+1. Klik tombol di kolom **Pengumpulan** (misalnya 12/30 sudah).
+2. Anda melihat jumlah yang sudah dan belum mengumpulkan, status Sudah, Belum, atau Terlambat, waktu kirim, dan jawaban siswa (teks atau tautan).
+3. Isi kolom **Nilai**, lalu klik **Simpan Nilai**. Tugas yang sudah dinilai tidak bisa diubah siswa.
+4. Klik **Unduh Nilai** di baris materi, atau **Unduh Excel** di jendela detail, untuk mengunduh nilai ke Excel.
+## Kuis online
+1. Buka **Kuis Online**, klik **+ Kuis Baru**, lalu isi judul, mapel, kelas, batas akhir (opsional), dan petunjuk.
+2. Tambah soal: **Pilihan Ganda** (pilih radio pada opsi yang benar), **Menjodohkan** (minimal 2 pasangan kiri dan kanan; poin dibagi rata per pasangan), atau **Uraian** (dinilai manual).
+3. Isi poin setiap soal. Bar di atas menampilkan jumlah soal dan total poin secara langsung.
+4. Klik **Simpan Kuis**, lalu **Terbitkan** di daftar kuis agar tampil di halaman utama.
+### Template dan impor Excel
+1. Klik **Unduh Template Excel**, lalu isi satu soal per baris pada sheet Soal (hapus baris contoh). Sheet Petunjuk menjelaskan aturannya.
+2. Kolom Tipe diisi pg, jodoh, atau uraian. Pilihan ganda: isi Opsi A sampai F dan Kunci dengan huruf yang benar. Menjodohkan: isi opsi dengan format kiri = kanan.
+3. Klik **Impor Soal dari Excel**. Soal ditambahkan ke daftar; periksa, lalu klik **Simpan Kuis**. Jika ada baris yang salah, impor dibatalkan dan pesan menyebut nomor barisnya.
+### Batas akhir kuis
+Setelah batas akhir lewat, kuis otomatis menjadi Draf dan siswa tidak bisa mengerjakannya lagi. Untuk membukanya kembali, klik **Edit**, ubah atau kosongkan batas akhir, simpan, lalu **Terbitkan**.
+### Hasil dan koreksi uraian
+1. Klik kolom **Pengumpulan** pada kuis untuk melihat siapa yang sudah dan belum mengerjakan, beserta skor otomatis.
+2. Untuk soal uraian, buka **Koreksi uraian** pada baris siswa, lalu isi nilai tiap soal (maksimal sebesar poin soalnya). Nilai total otomatis dihitung dari skor otomatis ditambah nilai uraian.
+3. Klik **Simpan Nilai**. Klik **Unduh Nilai** pada baris kuis untuk Excel yang memuat nilai per soal dan nilai total.
+`;
+
+const GUIDE_ADMIN = `
+## Khusus admin
+1. Isi data awal berurutan: **Data Mata Pelajaran**, **Data Guru** (pilih satu atau lebih mapel), **User** (nama dipilih dari Data Guru; tentukan role dan password), lalu **Data Siswa**.
+2. Data Siswa bisa diisi satu per satu atau lewat **Unduh Template Excel** dan **Impor Siswa** (kolom Nama, Kelas, Jenis Kelamin L atau P).
+3. **Identitas Sekolah**: isi nama sekolah, unggah logo, dan atur **Gambar Latar Banner** halaman depan.
+- Tulis kelas dengan konsisten, karena daftar nama siswa disaring berdasarkan kelas materi atau kuis. Siswa yang tidak aktif tidak muncul di pilihan nama.
+- Mengganti nama mapel atau guru otomatis memperbarui data yang terhubung. Mapel yang dipakai guru dan guru yang punya akun user tidak bisa dihapus.
+`;
+
+const GUIDE_TIPS = `
+## Pemecahan masalah
+| Masalah | Solusi |
+|---|---|
+| Materi atau kuis tidak muncul di halaman utama | Pastikan statusnya Terbit. Untuk kuis, periksa juga batas akhirnya. |
+| Nama siswa tidak ada di pilihan | Periksa Data Siswa: statusnya aktif dan kelasnya sama dengan kelas materi. |
+| Video atau PDF Drive tidak tampil | Atur berbagi file ke "Siapa saja yang memiliki link". |
+| Perubahan tampilan belum terlihat | Muat ulang halaman dengan Ctrl+F5. |
+`;
+
+/** Penyaji markdown sederhana untuk panduan (judul, daftar, tabel, tebal/miring). */
+function md(src) {
+  const inl = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>');
+  let out = '', list = null, tbl = false;
+  const flush = () => { if (list) { out += '</' + list + '>'; list = null; } if (tbl) { out += '</tbody></table></div>'; tbl = false; } };
+  src.split('\n').forEach(l => {
+    let m;
+    if (!l.trim()) return flush();
+    if ((m = l.match(/^(#{2,3}) (.+)/))) { flush(); const h = m[1].length + 1; out += '<h' + h + '>' + inl(m[2]) + '</h' + h + '>'; }
+    else if ((m = l.match(/^\d+\. (.+)/))) { if (list !== 'ol') { flush(); out += '<ol>'; list = 'ol'; } out += '<li>' + inl(m[1]) + '</li>'; }
+    else if ((m = l.match(/^- (.+)/))) { if (list !== 'ul') { flush(); out += '<ul>'; list = 'ul'; } out += '<li>' + inl(m[1]) + '</li>'; }
+    else if (l.startsWith('|')) {
+      if (/^[-\s|]+$/.test(l)) return;
+      const c = l.split('|').slice(1, -1).map(x => x.trim());
+      if (!tbl) { flush(); out += '<div class="tblwrap"><table><thead><tr>' + c.map(x => '<th>' + inl(x) + '</th>').join('') + '</tr></thead><tbody>'; tbl = true; }
+      else out += '<tr>' + c.map(x => '<td>' + inl(x) + '</td>').join('') + '</tr>';
+    }
+    else { flush(); out += '<p>' + inl(l) + '</p>'; }
+  });
+  flush();
+  return out;
+}
+
+function pgPanduan(which) {
+  which = which || 'guru';
+  const admin = S.user.role === 'admin';
+  const txt = which === 'guru' ? GUIDE_GURU + (admin ? GUIDE_ADMIN : '') + GUIDE_TIPS : GUIDE_SISWA;
+  $('#content').innerHTML = `<div class="pg-head"><h2>Panduan Pengguna</h2><div style="display:flex;gap:8px">
+    <button class="btn ${which === 'guru' ? 'primary' : 'ghost'}" data-g="guru">Untuk Guru</button><button class="btn ${which === 'siswa' ? 'primary' : 'ghost'}" data-g="siswa">Untuk Siswa</button></div></div>
+    <div class="panel guide">${md(txt)}</div>`;
+  $$('[data-g]').forEach(b => b.onclick = () => pgPanduan(b.dataset.g));
+}
+
 /* ================== TEMA & IKON ================== */
-[['btnPass', 'key'], ['btnHome', 'home'], ['btnLogout', 'logout']].forEach(a => $('#' + a[0]).insertAdjacentHTML('afterbegin', ic(a[1])));
+[['btnPanduan', 'book'], ['btnPass', 'key'], ['btnHome', 'home'], ['btnLogout', 'logout']].forEach(a => $('#' + a[0]).insertAdjacentHTML('afterbegin', ic(a[1])));
 $$('[data-theme-toggle]').forEach(b => { b.innerHTML = '<span class="ico-moon">' + ic('moon') + '</span><span class="ico-sun">' + ic('sun') + '</span>'; });
+$('#btnPanduan').onclick = () => openForm('Panduan Pengguna Siswa', '<div class="guide">' + md(GUIDE_SISWA) + '</div>', null, { wide: true, noSubmit: true });
 document.addEventListener('click', e => {
   if (!e.target.closest('[data-theme-toggle]')) return;
   S.theme = document.documentElement.getAttribute('data-theme') === 'gelap' ? 'terang' : 'gelap';
@@ -1408,14 +1597,111 @@ function openKumpul(jenis, id) {
     } });
 }
 
+/* ================== RIWAYAT (TOMBOL BACK) ================== */
+const Nav = {
+  cur: { v: 'public' }, dlgCount: 0, pending: false, stale: false, after: [], defer: null,
+  push(st) { const run = () => history.pushState(st, ''); this.pending ? this.after.push(run) : run(); },
+  view(st) {
+    if (st.v === this.cur.v && st.p === this.cur.p) return;
+    this.cur = st;
+    if (this.dlgCount) this.defer = st; else this.push(st);
+  },
+  dlgOpened() { if (this.dlgCount++ === 0) this.push(Object.assign({}, this.cur, { d: 1 })); },
+  dlgClosed() {
+    if (this.dlgCount === 0) return;
+    if (--this.dlgCount === 0) {
+      const d = this.defer; this.defer = null;
+      this.pending = true; history.back();
+      if (d) this.after.push(() => history.pushState(d, ''));
+    }
+  }
+};
+function syncView(st) {
+  const c = Nav.cur;
+  if (st.v === c.v && st.p === c.p) return;
+  if (st.v === 'app') {
+    if (!S.token) { Nav.pending = Nav.stale = true; history.back(); return; }  // sesi sudah berakhir: lewati entri panel lama
+    Nav.cur = { v: 'app', p: st.p };
+    $('#publicView').hidden = true; $('#appView').hidden = false;
+    go(st.p, true);
+  } else {
+    Nav.cur = { v: 'public' };
+    showPublic(true);
+  }
+}
+window.addEventListener('popstate', e => {
+  const st = e.state || { v: 'public' };
+  if (Nav.pending) {
+    Nav.pending = false;
+    if (Nav.stale) { Nav.stale = false; syncView(st); return; }
+    const q = Nav.after; Nav.after = []; q.forEach(f => f());
+    return;
+  }
+  if (st.d) { Nav.pending = true; history.back(); return; }  // maju ke entri dialog: lewati
+  if (Nav.dlgCount) { Nav.dlgCount = 0; Nav.defer = null; $$('dialog[open]').forEach(d => d.close()); }  // Back menutup dialog
+  syncView(st);
+});
+const _showModal = HTMLDialogElement.prototype.showModal;
+HTMLDialogElement.prototype.showModal = function () { _showModal.call(this); Nav.dlgOpened(); };
+document.addEventListener('close', e => { if (e.target instanceof HTMLDialogElement) Nav.dlgClosed(); }, true);
+$('.scrollcue').addEventListener('click', e => { e.preventDefault(); $('#sec-belajar').scrollIntoView({ behavior: 'smooth' }); });
+
+/* ================== TOMBOL TAMPILKAN PASSWORD ================== */
+ICONS.eye = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';
+ICONS.eyeoff = '<path d="M9.9 4.2A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2"/><path d="M6.6 6.6C3.7 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/>';
+function upgradePw() {
+  $$('input[type=password]:not([data-eye])').forEach(inp => {
+    inp.dataset.eye = '1';
+    const w = document.createElement('div'); w.className = 'pw';
+    inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'eye'; b.title = 'Tampilkan password'; b.setAttribute('aria-label', 'Tampilkan password'); b.innerHTML = ic('eye');
+    b.addEventListener('mousedown', e => e.preventDefault());
+    b.addEventListener('click', () => {
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      b.innerHTML = ic(show ? 'eyeoff' : 'eye');
+      b.title = show ? 'Sembunyikan password' : 'Tampilkan password'; b.setAttribute('aria-label', b.title);
+    });
+    w.appendChild(b);
+  });
+}
+upgradePw();
+new MutationObserver(upgradePw).observe(document.body, { childList: true, subtree: true });
+document.addEventListener('close', e => { $$('.pw input[data-eye]', e.target).forEach(i => { if (i.type === 'text') i.parentNode.querySelector('.eye').click(); }); }, true);
+
+/* ================== ANIMASI MEMUAT ================== */
+const Loader = {
+  el: $('#splash'), t0: Date.now(), timer: null, hideT: null, i: 0,
+  MSGS: ['Membuka buku pelajaran...', 'Menajamkan pensil...', 'Menyiapkan papan tulis...', 'Membersihkan penghapus...', 'Mengabsen siswa satu per satu...', 'Hampir siap, siapkan semangat belajar!'],
+  say(t) { $('#splashMsg').textContent = t; },
+  show(first) {
+    clearTimeout(this.hideT); clearInterval(this.timer);
+    this.t0 = Date.now(); this.i = 0;
+    this.el.hidden = false; requestAnimationFrame(() => this.el.classList.remove('hide'));
+    this.say(first || this.MSGS[0]);
+    this.timer = setInterval(() => this.say(this.MSGS[this.i = (this.i + 1) % this.MSGS.length]), 1800);
+  },
+  hide(now) {
+    const wait = now ? 0 : Math.max(0, 1000 - (Date.now() - this.t0));
+    clearTimeout(this.hideT);
+    this.hideT = setTimeout(() => {
+      clearInterval(this.timer); this.el.classList.add('hide');
+      this.hideT = setTimeout(() => { this.el.hidden = true; }, 420);
+    }, wait);
+  }
+};
+
 /* ================== INIT ================== */
 (async function init() {
+  Loader.show();
+  history.replaceState({ v: 'public' }, '');
   const t = store.get();
   if (t) {
     S.token = t;
     try { S.user = await call('me'); } catch (e) { S.token = null; store.set(null); }
   }
-  S.token ? (await loadPublic(), showApp()) : showPublic();
+  try { S.token ? (await loadPublic(), await showApp()) : await showPublic(); } finally { Loader.hide(); }
 })();
 </script>
 </body>
